@@ -96,48 +96,70 @@ roadmap toward physically grounded, generalisable world models.
 Intelligence requires reasoning about the world beyond what is immediately
 visible.
 A self-driving vehicle must anticipate the scene around a blind corner;
-a robot must predict how a grasped object will appear from the wrist camera;
-a surgeon must mentally rotate an anatomy from a 2-D scan.
-In each case the core operation is identical:
-\textbf{synthesising a plausible visual state at an unobserved vantage point}.
+a robotic arm must predict how a grasped object will appear from the wrist
+camera after a planned motion; a surgeon must mentally reconstruct
+anatomy from a 2-D scan.
+In each case, the core operation is identical: \textbf{synthesising a
+plausible visual state at an unobserved vantage point}.
 
 This is the problem of \textbf{Novel View Synthesis~(\nvs)}.
-Given reference images $\{\mathbf{I}_i,\boldsymbol{\pi}_i\}_{i=1}^{n}$ with
-known camera poses, the goal is to render a photo-realistic image
+Formally, given a set of reference observations
+$\{\mathbf{I}_i, \boldsymbol{\pi}_i\}_{i=1}^{n}$ with known camera poses
+$\boldsymbol{\pi}_i$, the goal is to render a photo-realistic image
 $\hat{\mathbf{I}}$ at an arbitrary target pose $\boldsymbol{\pi}^{*}$,
-faithfully preserving geometry, appearance, and lighting.
+faithfully preserving 3-D geometry, surface appearance, and lighting.
+The problem is inherently ill-posed when $n$ is small or when the target
+pose is far from any reference: an infinite family of 3-D scenes
+is consistent with any finite set of 2-D projections.
+Resolving this ambiguity requires either dense capture (classical IBR) or
+a learned prior over the distribution of plausible scenes (modern neural
+and generative approaches).
 
-While the problem was studied in the image-based rendering
+While \nvs{} was studied in the image-based rendering
 era~\citep{levoy1996light,mcmillan1995plenoptic,chen1993view,debevec1996modeling},
-the past five years have witnessed an extraordinary leap:
-NeRF~\citep{mildenhall2020nerf},
-3DGS~\citep{kerbl2023gaussian}, and diffusion-based
-methods~\citep{liu2023zero1to3,poole2023dreamfusion}
-have pushed the frontier from slow per-scene reconstruction toward fast,
-generalisable, and generative synthesis.
+the past six years have witnessed an extraordinary paradigm shift:
+NeRF~\citep{mildenhall2020nerf} demonstrated that a shallow MLP can represent
+complex scenes with view-dependent appearance by differentiably volume-rendering
+a continuous radiance field;
+3DGS~\citep{kerbl2023gaussian} showed that an explicit set of anisotropic
+Gaussians can render at real-time frame rates;
+and diffusion-based methods~\citep{liu2023zero1to3,poole2023dreamfusion,yu2024viewcrafter}
+have moved the frontier toward \emph{generalisable, generative} synthesis
+that requires as few as a single image---or even a text description---as input.
 
 \subsection{From NVS to World Modeling}
 
 We argue that this progression reflects a deeper conceptual shift:
-\textbf{\nvs{} is becoming the spatial inference engine of Generative World
-Modeling}.
+\textbf{\nvs{} is becoming the foundational spatial inference engine of
+Generative World Modeling}.
 
 \begin{quote}
   \textbf{Working Definition~(World Model).}\quad
   A \emph{Generative World Model} is a learned system that can predict the
   visual (and optionally physical) state of a scene under arbitrary
-  conditions---viewpoint changes, temporal evolution, and agent
+  conditions---including viewpoint changes, temporal evolution, and agent
   interactions---in a manner that is \emph{geometrically consistent},
-  \emph{physically plausible}, and \emph{generalisable} beyond the training
-  distribution.
+  \emph{physically plausible}, and \emph{generalisable} to scenes and conditions
+  outside the training distribution.
 \end{quote}
 
-Under this definition, \nvs{} is the special case where the only varying
+Under this definition, \nvs{} is the special case in which the only varying
 condition is camera pose.
-A world model must additionally handle temporal dynamics and action conditioning.
-Crucially, \emph{spatial consistency enforced by \nvs{} is a prerequisite}:
-a world model without geometric grounding is merely a video generator---plausible
-in appearance but unreliable for spatial reasoning.
+A full world model must additionally handle temporal dynamics~(D3),
+action conditioning~(D4), and physical plausibility~(D5).
+Crucially, \emph{spatial consistency enforced by \nvs{} is a necessary
+prerequisite}: a world model without geometric grounding is merely a video
+predictor---perceptually plausible in distribution but unreliable for tasks
+requiring precise spatial reasoning such as robot manipulation or navigation.
+
+Recent systems are actively closing this gap.
+Genie~2~\citep{parkerholder2024genie2} generates interactive 3-D environments
+from a single image; Cosmos~\citep{agarwal2025cosmos} trains world foundation
+models at internet scale; and ViewCrafter~\citep{yu2024viewcrafter} with
+StreetCrafter~\citep{yan2024streetcrafter} demonstrate that camera-controlled
+video generation is practical at high resolution.
+These developments reflect the field's convergence on a unified model that
+subsumes NVS, video generation, and world simulation.
 
 \subsection{Relationship to Prior Surveys}
 
@@ -271,46 +293,85 @@ We organise all methods along a \emph{continuous spectrum} defined by three axes
 
 \subsection{Classical Image-Based Rendering}
 
-Before the neural era, novel view synthesis was approached through
+Before the neural era, \nvs{} was approached through
 \emph{image-based rendering}~(IBR)~\citep{mcmillan1995plenoptic,chen1993view,levoy1996light}.
-Light Field Rendering~\citep{levoy1996light} densely samples the plenoptic
-function~\citep{adelson1991plenoptic} to enable view interpolation without
-explicit geometry.
-View-dependent texture mapping~\citep{debevec1996modeling} and
-Lumigraph~\citep{gortler1996lumigraph} extended these ideas.
+The foundational insight is that images directly encode light transport:
+sufficiently dense sampling of the plenoptic function~\citep{adelson1991plenoptic}
+permits view interpolation without reasoning about explicit 3-D geometry.
+
+Light Field Rendering~\citep{levoy1996light} and the Lumigraph~\citep{gortler1996lumigraph}
+parameterise the light field on a two-plane slab, enabling photo-realistic view
+interpolation within the captured light-field volume.
+View interpolation~\citep{chen1993view} warps and blends reference images
+using depth estimates, anticipating modern depth-based view synthesis.
+Unstructured Lumigraphs and view-dependent texture mapping~\citep{debevec1996modeling}
+relaxed capture requirements to unstructured camera sets.
 Structure from Motion~(SfM)~\citep{schoenberger2016sfm} and
-Multi-View Stereo~(MVS)~\citep{schonberger2016mvs} provided the geometry backbone.
-The key limitation of classical IBR is its dependence on dense capture:
-generalisation to novel poses requires interpolation within the observed set,
-not extrapolation beyond it.
+Multi-View Stereo~(MVS)~\citep{schonberger2016mvs} established the
+geometry-estimation pipeline that underlies all pose-conditioned \nvs{} to this day.
+
+The fundamental limitation of classical IBR is the requirement for
+\emph{dense} capture: interpolation quality degrades rapidly as target
+viewpoints move beyond the convex hull of the observed camera set.
+Furthermore, these methods produce no compact scene model---each novel view
+requires querying the full set of reference images at inference time.
+The desire for compact, generalisable scene representations drove the
+development of neural radiance fields.
 
 \subsection{Volume Rendering and NeRF}
 
 NeRF~\citep{mildenhall2020nerf} represents a scene as a continuous function
-$F_\theta:(\mathbf{x},\mathbf{d})\mapsto(\mathbf{c},\sigma)$.
-The expected colour of a ray $\mathbf{r}(s)=\mathbf{o}+s\mathbf{d}$ is:
+$F_\theta:(\mathbf{x},\mathbf{d})\mapsto(\mathbf{c},\sigma)$, where
+$\mathbf{x}\in\mathbb{R}^3$ is a 3-D location and
+$\mathbf{d}\in\mathbb{S}^2$ a viewing direction.
+The expected colour of a ray $\mathbf{r}(s)=\mathbf{o}+s\mathbf{d}$ is
+computed via classical volume rendering~\citep{kajiya1984ray}:
 \begin{equation}
   \hat{C}(\mathbf{r})=\int_{s_n}^{s_f} T(s)\,\sigma(\mathbf{r}(s))\,
   \mathbf{c}(\mathbf{r}(s),\mathbf{d})\,\mathrm{d}s,
-  \quad T(s)=\exp\!\left(-\int_{s_n}^s\sigma(\mathbf{r}(u))\,\mathrm{d}u\right).
+  \quad T(s)=\exp\!\left(-\int_{s_n}^s\sigma(\mathbf{r}(u))\,\mathrm{d}u\right),
   \label{eq:volrender}
 \end{equation}
-The training objective minimises photometric reconstruction loss.
-Stratified and hierarchical sampling make the continuous integral tractable.
+where $T(s)$ is the accumulated transmittance.
+$F_\theta$ is a position-encoded MLP~\citep{tancik2020fourier} trained by
+minimising $\|\hat{C}(\mathbf{r})-C(\mathbf{r})\|_2^2$ over all observed rays.
+Hierarchical stratified sampling decomposes the continuous integral into
+coarse and fine networks, concentrating samples near the visible surface.
+
+NeRF's key properties---implicit representation, continuous differentiability,
+and view-dependent appearance via directional encoding---made it transformative.
+Its central limitations are \emph{slow per-scene optimisation} (hours) and
+\emph{per-scene specificity} (no generalisation to unseen scenes), both of which
+the subsequent literature directly addressed.
 
 \subsection{Gaussian Splatting}
 
-3DGS~\citep{kerbl2023gaussian} represents a scene as $N$ anisotropic Gaussians
-$\{\boldsymbol{\mu}_i,\boldsymbol{\Sigma}_i,\alpha_i,\mathbf{c}_i\}$.
-Pixel colour is computed by front-to-back alpha compositing of projected Gaussians:
+3DGS~\citep{kerbl2023gaussian} represents a scene as $N$ anisotropic 3-D
+Gaussians $\{(\boldsymbol{\mu}_i, \boldsymbol{\Sigma}_i, \alpha_i,
+\mathbf{c}_i)\}_{i=1}^N$, where $\boldsymbol{\mu}_i$ is the centre,
+$\boldsymbol{\Sigma}_i$ the full covariance, $\alpha_i$ the opacity, and
+$\mathbf{c}_i$ a set of spherical-harmonic coefficients encoding
+view-dependent colour.
+Novel views are rendered by projecting each Gaussian to a 2-D splat and
+compositing front-to-back:
 \begin{equation}
   \hat{C}=\sum_{i\in\mathcal{N}}\mathbf{c}_i\,\alpha_i\,\tilde{G}_i
   \prod_{j<i}(1-\alpha_j\,\tilde{G}_j),
   \label{eq:splatting}
 \end{equation}
-where $\tilde{G}_i$ is the 2-D projection of Gaussian~$i$.
-Adaptive densification clones/splits under-reconstructed regions and
-prunes redundant Gaussians.
+where $\tilde{G}_i$ denotes the 2-D projection of Gaussian~$i$.
+Training proceeds by differentiable rasterisation and minimisation of a
+combined $\ell_1$ and SSIM photometric loss.
+An \emph{adaptive densification} strategy clones under-reconstructed Gaussians
+and splits over-large ones, while pruning transparent or redundant primitives.
+
+3DGS achieves real-time rendering ($>$100\,fps at 1080p) with training times
+of tens of minutes---a dramatic improvement over NeRF.
+Its explicit, editable representation makes it attractive for downstream
+tasks in scene editing, simulation, and embodied AI.
+The primary limitations are \emph{higher memory footprint} (millions of Gaussians
+per scene) and \emph{limited surface quality} compared to SDF-based methods.
+A large subsequent literature has addressed both limitations.
 
 \subsection{Unified NVS and World Modeling Formulation}
 
@@ -367,42 +428,55 @@ Disadvantages: require segmentation or part annotation.
 \subsection{Foundational NeRF Methods}
 
 The original NeRF~\citep{mildenhall2020nerf} demonstrated that an MLP with
-positional encoding could represent complex real scenes with view-dependent
-appearance.
-Subsequent work addressed NeRF's two principal limitations:
-\emph{slow optimisation} and \emph{poor generalisation}.
+positional encoding could faithfully represent complex real scenes with
+view-dependent appearance from a few dozen posed photographs.
+Subsequent work systematically addressed its two principal limitations---slow
+optimisation and poor generalisation to novel scenes.
 
-\paragraph{Reducing optimisation time.}
-Instant-NGP~\citep{muller2022instant} replaces the MLP backbone with a
-multi-resolution hash grid, reducing training from hours to seconds
-while achieving state-of-the-art quality.
-TensoRF~\citep{chen2022tensorf} decomposes the radiance field into
-compact tensor components (CP and VM decomposition).
-Plenoxels~\citep{fridovich2022plenoxels} uses a sparse 3-D voxel grid
-with spherical harmonics, achieving minute-scale optimisation without neural
-networks.
-DirectVoxGO~\citep{sun2022dvgo} adopts a two-stage coarse-to-fine voxel grid.
-DVGO~\citep{sun2022dvgo} and TensoRF set new speed records for per-scene NeRF.
+\paragraph{Accelerating per-scene optimisation.}
+The bottleneck in vanilla NeRF is the MLP query: every rendered pixel
+requires hundreds of network evaluations along the ray.
+Instant-NGP~\citep{muller2022instant} replaces the large MLP backbone with a
+compact multi-resolution \emph{hash grid}, enabling training convergence in
+under a minute on a single GPU while matching or exceeding prior quality.
+TensoRF~\citep{chen2022tensorf} decomposes the radiance field into low-rank
+CP and VM tensor components, reducing both storage and rendering overhead.
+Plenoxels~\citep{fridovich2022plenoxels} eliminates the MLP entirely,
+using a sparse 3-D voxel grid with trilinearly interpolated spherical harmonics;
+the resulting model trains in minutes without gradient-intensive network
+backward passes.
+DirectVoxGO~\citep{sun2022dvgo} accelerates convergence via a two-stage
+coarse-to-fine voxel grid that aggressively skips empty space.
 
-\paragraph{Improving rendering quality.}
-Mip-NeRF~\citep{barron2021mipnerf} casts conical frustums instead of rays,
-reducing aliasing at multiple scales.
-Mip-NeRF~360~\citep{barron2022mipnerf360} extends this to unbounded 360$^\circ$
-scenes via a non-linear scene contraction.
-Zip-NeRF~\citep{barron2023zipnerf} combines the hash grid of Instant-NGP with
-the anti-aliasing of Mip-NeRF~360.
-NeRF-W~\citep{martinbrualla2021nerfw} models per-image appearance variation for
-in-the-wild captures.
-Ref-NeRF~\citep{verbin2022refnerf} improves specular appearance with
-a physically-based reflection model.
+\paragraph{Improving visual quality and handling challenging scenes.}
+Mip-NeRF~\citep{barron2021mipnerf} replaces the point-sampled ray with an
+\emph{integrated positional encoding} over a conical frustum, substantially
+reducing aliasing at multiple viewing distances.
+Mip-NeRF~360~\citep{barron2022mipnerf360} extends this to unbounded outdoor
+scenes via a non-linear scene parameterisation that contracts the infinite
+background into a bounded representation.
+Zip-NeRF~\citep{barron2023zipnerf} unifies the hash grid of Instant-NGP with
+the anti-aliasing of Mip-NeRF~360, establishing the current quality frontier
+for per-scene NeRF.
+NeRF-W~\citep{martinbrualla2021nerfw} introduces per-image latent appearance
+codes and a transient object model, enabling reconstruction of tourist-photographed
+landmarks from uncontrolled internet images.
+Ref-NeRF~\citep{verbin2022refnerf} restructures the directional encoding into
+a physically-based reflection model that explicitly predicts diffuse colour,
+specular tint, and surface roughness, dramatically improving the rendering of
+specular and metallic materials.
 
-\paragraph{Surface and geometry extraction.}
-NeuS~\citep{wang2021neus} reformulates volume rendering using a signed distance
-function (SDF), yielding better surface reconstruction.
-VolSDF~\citep{yariv2021volsdf} provides an alternative SDF-to-density
-conversion.
-BakedSDF~\citep{yariv2023bakedsdf} extracts high-quality meshes from NeRF via
-SDF-based optimization.
+\paragraph{Surface reconstruction.}
+While volume rendering naturally produces accurate alpha composites, it does not
+enforce a well-defined surface, leading to noisy geometry.
+NeuS~\citep{wang2021neus} reformulates volume rendering using a logistic
+density derived from a Signed Distance Function~(SDF), yielding watertight,
+high-quality surface reconstruction.
+VolSDF~\citep{yariv2021volsdf} derives a rigorous analytical mapping from
+SDF values to volume density, providing a theoretically grounded alternative.
+BakedSDF~\citep{yariv2023bakedsdf} combines the surface quality of SDF-based
+NeRF with real-time rendering by extracting and baking the learned SDF into a
+high-quality mesh.
 
 Table~\ref{tab:nerf_methods} summarises representative NeRF variants.
 
@@ -529,42 +603,64 @@ Table~\ref{tab:dynamic_nerf} summarises dynamic NeRF methods.
 \subsection{Foundational 3DGS}
 
 3DGS~\citep{kerbl2023gaussian} achieved real-time ($>$100\,fps at 1080p)
-high-quality NVS with fast training.
-Its explicit, editable representation opened entirely new research directions.
+NVS with training times of 30--45 minutes on commodity hardware,
+surpassing NeRF-quality baselines on standard benchmarks.
+Its three key innovations are:
+(i)~anisotropic Gaussian primitives that align naturally with planar scene
+structures;
+(ii)~tile-based rasterisation that enables massively parallel GPU rendering;
+(iii)~adaptive densification that automatically allocates capacity to
+under-reconstructed regions.
+The resulting representation is fully explicit and editable, opening new
+directions in scene editing, simulation, and avatar rendering.
 
-\paragraph{Quality improvements.}
-Mip-Splatting~\citep{yu2024mipsplatting} applies 3-D smoothing filters to
-address aliasing at different viewing distances.
-AbsGS~\citep{ye2024absgs} improves densification with an absolute gradient
-criterion, reducing needle artifacts.
-Taming 3DGS provides principled primitives for
-bounded and compact reconstruction.
+\paragraph{Quality and anti-aliasing.}
+Mip-Splatting~\citep{yu2024mipsplatting} identifies aliasing in vanilla 3DGS
+as arising from the approximation of 3-D Gaussian convolution during 2-D
+projection.
+It introduces a 3-D smoothing filter derived from the sampling footprint,
+enabling accurate multi-scale rendering and substantially reducing floaters
+at large distances.
+AbsGS~\citep{ye2024absgs} revisits the densification criterion: replacing
+the mean gradient with an absolute-value measure improves coverage in
+thin structures and reduces needle-like artifacts near object boundaries.
 
-\paragraph{Compression and efficiency.}
-LightGaussian~\citep{fan2023lightgaussian} globally prunes and vector-quantises
-Gaussians, achieving $15\times$ compression with minimal quality loss.
-Compact3D~\citep{lee2024compact3d} uses k-means codebooks for attribute
-compression.
-EAGLES~\citep{girish2024eagles} compresses Gaussians using residual vector
-quantization.
-Scaffold-GS~\citep{lu2023scaffoldgs} introduces anchor Gaussians that drive
-neural Gaussian attribute prediction, substantially reducing storage.
-HAC~\citep{chen2024hac} uses hash-grid-aided context models for extreme compression.
+\paragraph{Compression and memory efficiency.}
+A single 3DGS scene may require 300MB--1GB of storage, limiting deployment.
+Scaffold-GS~\citep{lu2023scaffoldgs} introduces a sparse set of anchor
+primitives from which neural networks predict neighbouring Gaussian attributes;
+this structured representation reduces storage by $3$--$5\times$ with
+comparable quality.
+LightGaussian~\citep{fan2023lightgaussian} achieves $15\times$ compression via
+global Gaussian pruning based on visibility contribution and subsequent
+vector quantisation of attributes.
+EAGLES~\citep{girish2024eagles} applies residual vector quantisation
+for fine-grained attribute compression.
+HAC~\citep{chen2024hac} proposes a hash-grid-based context model that predicts
+per-Gaussian attribute entropy, enabling learned arithmetic coding for
+extreme compression ratios.
 
 \paragraph{Surface reconstruction.}
-SuGaR~\citep{guedon2024sugar} jointly optimises mesh and Gaussians for
-high-quality surface extraction from 3DGS.
-2DGS~\citep{huang2024_2dgs} uses 2-D disk Gaussians for better surface alignment.
-Gaussian Opacity Fields~(GOF)~\citep{yu2024gof} combines Gaussian Splatting
-with a continuous opacity field.
+SuGaR~\citep{guedon2024sugar} aligns Gaussians to the scene surface by adding
+a regularisation term that encourages Gaussians to become flat discs at
+the surface, followed by mesh extraction and joint Gaussian--mesh refinement.
+2DGS~\citep{huang2024_2dgs} replaces 3-D Gaussians with 2-D disc primitives,
+which by construction lie on surfaces and produce accurate normal maps.
+Gaussian Opacity Fields~(GOF)~\citep{yu2024gof} fuses Gaussian Splatting with
+a continuous opacity field for topologically correct surface extraction in
+unbounded scenes.
 
-\paragraph{Scene editing and compositional scenes.}
-GaussianEditor~\citep{chen2024gaussianeditor} performs language-guided
-3-D Gaussian editing.
-Gaussian Grouping~\citep{ye2023gaussian_grouping} segments 3DGS with identity
-fields for part-level editing.
-GALA3D~\citep{zhou2024gala3d} generates multi-object compositional scenes with
-3DGS via LLM-guided layout.
+\paragraph{Scene editing and compositionality.}
+The explicit Gaussian representation is particularly amenable to editing:
+individual primitives can be identified, moved, duplicated, or removed.
+GaussianEditor~\citep{chen2024gaussianeditor} harnesses a large vision-language
+model to select semantically relevant Gaussians from a text description and
+optimises their appearance with a diffusion prior.
+Gaussian Grouping~\citep{ye2023gaussian_grouping} augments each Gaussian with
+a learned identity field, trained with SAM~\citep{kirillov2023sam} masks from
+rendered views, enabling instance-level part decomposition and editing.
+GALA3D~\citep{zhou2024gala3d} uses an LLM to generate a 3-D layout from text
+and initialises Gaussians per-object, enabling compositional scene generation.
 
 Table~\ref{tab:3dgs_methods} summarises key 3DGS variants.
 
@@ -703,129 +799,330 @@ improved accuracy and generalisation.
 These methods provide the geometry backbone for downstream NVS.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Generative Paradigms for NVS}
+\section{Generative Paradigms for Novel View Synthesis}
 \label{sec:generative}
 
-\subsection{3-D-Aware GANs}
+The emergence of deep generative models---first GANs and then diffusion
+models---has fundamentally altered the landscape of \nvs{}.
+Where reconstruction-based methods infer a scene representation from observations
+and render it deterministically, \emph{generative} methods learn a distribution
+over plausible visual completions given partial observations.
+This distinction is not merely architectural: it represents a shift from
+\emph{interpolation} (rendering within the observed convex hull of viewpoints)
+to \emph{extrapolation} (hallucinating plausible content beyond it).
+Generative methods are therefore the primary vehicle for the one-image-to-3D,
+text-to-3D, and single-image world-generation capabilities that bring \nvs{}
+into the world-modeling regime.
 
-GRAF~\citep{schwarz2020graf} and pi-GAN~\citep{chan2021pigan} condition
-radiance-field generators on latent codes, producing multi-view consistent images.
-EG3D~\citep{chan2022efficient} introduced the triplane backbone and a
-super-resolution network, dramatically improving quality and speed.
-StyleNeRF~\citep{gu2022stylenerf} integrates NeRF into a StyleGAN generator.
-GIRAFFE~\citep{niemeyer2021giraffe} decomposes scenes into compositional
-neural feature fields.
-These methods established implicit 3-D supervision via GAN training on 2-D images.
+\subsection{3-D-Aware GANs: Learning Geometry from 2-D Supervision}
 
-\subsection{Diffusion-Based Single-View and Sparse-View NVS}
+The first wave of generative \nvs{} methods embedded radiance fields inside
+GAN generators, enabling implicit 3-D supervision from unposed 2-D image
+collections---a paradigm that proved influential precisely because it
+required no 3-D ground truth.
 
-\paragraph{Pose-conditioned diffusion.}
-Zero-1-to-3~\citep{liu2023zero1to3} fine-tunes a latent diffusion model on
-multi-view data, conditioning on relative pose for single-image NVS.
-Zero123++~\citep{shi2023zero123pp} improves consistency across views.
-One-2-3-45~\citep{liu2023one2345} lifts diffusion outputs to 3-D via MVS.
-SyncDreamer~\citep{liu2023syncdreamer} jointly denoises multiple views
-with shared 3-D attention.
-MVDiffusion~\citep{tang2023mvdiffusion} generates multi-view consistent
-images via a correspondence-aware attention mechanism.
-Wonder3D~\citep{long2024wonder3d} generates cross-domain diffusion outputs
-(colour + normal) for high-quality 3-D reconstruction.
-EscherNet~\citep{kong2024eschernet} uses positional encoding for
-arbitrary view generation.
+GRAF~\citep{schwarz2020graf} pioneered this direction by conditioning a NeRF
+generator on a latent shape-appearance code, training with a 2-D discriminator.
+pi-GAN~\citep{chan2021pigan} improved the NeRF backbone with periodic activations
+(SIREN~\citep{sitzmann2020siren}), achieving substantially better multi-view
+consistency.
+GIRAFFE~\citep{niemeyer2021giraffe} introduced scene compositionality by
+combining foreground and background neural feature fields, enabling object-level
+editing without explicit segmentation.
+EG3D~\citep{chan2022efficient} is the landmark method of this era: its
+\emph{triplane} representation---three axis-aligned 2-D feature maps decoded by
+a shallow MLP---reduces rendering cost by orders of magnitude and admits a
+super-resolution upsampler, enabling 512$\times$512 training at practical
+throughput.
+StyleNeRF~\citep{gu2022stylenerf} integrates the NeRF volume renderer into a
+StyleGAN~\citep{karras2019stylegan2} backbone, inheriting its powerful
+style-based latent structure for fine-grained appearance control.
 
-\paragraph{Reconstruction-diffusion hybrids.}
-Cat3D~\citep{gao2024cat3d} generates consistent multi-view images then
-feeds them to a NeRF/3DGS pipeline.
-ReconFusion~\citep{wu2024reconfusion} integrates pixel-level diffusion
-priors into sparse-view NeRF.
-ZeroNVS~\citep{sargent2023zeronvs} enables zero-shot NVS from a single
-in-the-wild image.
-Free3D~\citep{zheng2023free3d} conditions a video diffusion model on
-camera trajectories for single-image novel-view sequences.
-Novel View Synthesis via DDIM Inversion~\citep{xu2024ddim_nvs} repurposes
-DDIM inversion of pre-trained video diffusion models as a training-free
-NVS approach, leveraging the implicit geometric knowledge in video diffusion.
-NVComposer~\citep{li2024nvcomposer} boosts generative NVS from multiple
-sparse and unposed images by composing their contributions at the feature level.
-Projected Representation Conditioning~\citep{han2024prc} proposes a
-high-fidelity NVS method by conditioning the diffusion model on projected
-3-D features for accurate geometric alignment.
-A Single Image and Multimodality~\citep{tang2024smm} synthesises novel views
-from a single image using multimodal conditioning (depth, normal, semantics).
-GeoNVS~\citep{chen2024geonvs} grounds video diffusion with explicit geometric
-prior for geometrically consistent NVS.
-NVS-Solver~\citep{you2024nvssolver} reinterprets video diffusion as a
-zero-shot NVS solver by casting view synthesis as a diffusion trajectory problem.
-Novel View Extrapolation~\citep{shi2024nve} addresses the challenging case of
-large-angle view extrapolation using video diffusion priors.
-ViVid-1-to-3~\citep{kwak2024vivid} extends video diffusion models to
-single-image NVS by aligning temporal and viewpoint consistency.
-Consistent View Synthesis~\citep{tsai2023consistent} enforces pose-guided
-consistency in diffusion-based NVS.
-iVS-Net~\citep{chen2024ivsnet} learns human view synthesis from internet
-videos without any 3-D supervision.
+A critical limitation of GAN-based approaches is \emph{mode coverage}: the
+discriminator objective encourages sharp, realistic individual samples but does
+not explicitly minimise distributional divergence over all plausible views,
+making it prone to mode dropping for complex, asymmetric scenes.
+This motivated the transition toward diffusion-based approaches.
 
-\subsection{Score Distillation and Text-to-3D}
+\subsection{Diffusion Models for Camera-Controlled NVS}
+\label{sec:diffusion_nvs}
 
-DreamFusion~\citep{poole2023dreamfusion} optimises a NeRF to maximise
-the log-likelihood under a pre-trained 2-D diffusion model.
-Magic3D~\citep{lin2023magic3d} uses coarse-to-fine optimisation with
-mesh refinement.
-ProlificDreamer~\citep{wang2023prolificdreamer} introduces variational
-score distillation for higher diversity and fidelity.
-Fantasia3D~\citep{chen2023fantasia3d} disentangles geometry and appearance
-for editable results.
-GaussianDreamer~\citep{yi2024gaussiandreamer} uses SDS to initialise and
-optimise 3DGS primitives.
-Lucid Dreamer~\citep{chung2023luciddreamer} improves SDS via interval score
-matching.
+Diffusion models~\citep{rombach2022ldm,ho2020ddpm} have become the
+dominant generative paradigm for \nvs{} due to three decisive advantages:
+(i)~training stability via a simple denoising objective;
+(ii)~access to powerful image priors from large-scale pretraining;
+(iii)~natural integration of arbitrary conditioning signals (pose, depth,
+text, reference image) through classifier-free guidance.
 
-\subsection{Multi-View Diffusion Models}
+\subsubsection{Pose-Conditioned Single-Image NVS}
 
-MVDream~\citep{shi2023mvdream} trains a multi-view diffusion model on
-3-D-consistent data for 3-D-aware generation.
-SyncDreamer~\citep{liu2023syncdreamer} uses feature synchronisation across views.
-Wonder3D~\citep{long2024wonder3d} generates colour and normal maps jointly.
-Consistent View Synthesis~\citep{tsai2023consistent} enforces long-range
-temporal and viewpoint consistency via diffusion.
-GeNVS~\citep{chan2023genvs} conditions a diffusion model on a NeRF scene
-representation.
+The most direct application is \emph{single-image NVS}: given one reference
+photograph and a target camera pose $\boldsymbol{\pi}^*$, generate a plausible
+rendering at that viewpoint.
+This is under-constrained without a prior---an infinite number of 3-D scenes
+are consistent with a single 2-D observation---and diffusion models provide
+exactly the distributional prior needed.
 
-Table~\ref{tab:generative_methods} summarises generative NVS methods.
+\paragraph{Zero-1-to-3 and successors.}
+Zero-1-to-3~\citep{liu2023zero1to3} established the canonical formulation:
+fine-tune a latent diffusion model (Stable Diffusion~\citep{rombach2022ldm})
+on multi-view renders from Objaverse~\citep{deitke2023objaverse}, conditioning
+on both the reference image and the relative pose $(\Delta\phi, \Delta\theta,
+\Delta r)$ encoded as a CLIP-space vector.
+The model learns to ``imagine'' how an object would look from any viewpoint,
+without constructing an explicit 3-D representation.
+Zero123++~\citep{shi2023zero123pp} strengthens multi-view consistency by
+predicting a fixed grid of six canonical views simultaneously, reducing
+inter-view inconsistency from independent sampling.
+One-2-3-45~\citep{liu2023one2345} pipelines Zero-1-to-3 outputs into a
+cost-volume-based MVS reconstruction~\citep{yao2018mvsnet}, converting the
+diffusion output to a textured mesh within 45 seconds.
+
+\paragraph{Synchronised multi-view denoising.}
+A key challenge with independently conditioned diffusion is that each generated
+view is sampled from a different realisation of the latent distribution,
+producing inter-view geometric contradictions.
+SyncDreamer~\citep{liu2023syncdreamer} addresses this by coupling the denoising
+of multiple target views through shared 3-D volume attention at each diffusion
+step, enforcing consistent geometry throughout the synthesis process.
+MVDiffusion~\citep{tang2023mvdiffusion} constructs a correspondence-aware attention
+mechanism that explicitly queries matching pixels across views, enabling
+holistic panorama generation from a set of overlapping perspective images.
+Wonder3D~\citep{long2024wonder3d} takes a two-domain approach: a cross-domain
+diffusion model simultaneously denoises an RGB and a surface-normal image,
+with the normal output serving as high-quality geometric supervision for
+downstream mesh reconstruction.
+
+\paragraph{Scalable and pose-free generation.}
+EscherNet~\citep{kong2024eschernet} generalises pose conditioning via a
+novel \emph{camera positional encoding}~(CaPE), enabling generation of
+an arbitrary number of views at any resolution without per-angle fine-tuning.
+ViVid-1-to-3~\citep{kwak2024vivid} recasts NVS as a video generation problem:
+the temporal axis of a pre-trained video diffusion model is repurposed to model
+the viewpoint axis, using the model's temporal consistency as a proxy for
+multi-view coherence.
+GeoNVS~\citep{chen2024geonvs} addresses geometric fidelity by conditioning a
+video diffusion model on a rendered point cloud at the target pose, grounding
+the generative hallucination in explicit 3-D geometry.
+
+\subsubsection{Multi-View Diffusion and 3-D-Consistent Generation}
+
+Single-view methods generate views independently or with limited cross-view
+coupling.
+A more ambitious goal is to train a diffusion model that \emph{natively}
+produces multi-view consistent outputs---effectively encoding 3-D structure
+implicitly in the model weights.
+
+MVDream~\citep{shi2023mvdream} achieves this by replacing the temporal
+self-attention in a video diffusion transformer with a 3-D-aware \emph{multi-view
+attention} block that attends across all views simultaneously.
+Training on rendered 3-D assets (Objaverse) with known camera poses teaches the
+model to share structural information across views.
+The resulting model can be used both as a standalone multi-view generator and
+as a geometry-consistent score function for SDS-based text-to-3D.
+
+GeNVS~\citep{chan2023genvs} takes a hybrid approach: a NeRF encoder constructs
+a 3-D feature volume from the conditioning images, and the diffusion decoder
+renders a target view by volumetrically querying this feature space.
+This architecture provides hard geometric grounding while preserving the
+expressiveness of the diffusion prior for high-frequency appearance details.
+
+\subsubsection{Camera Trajectory Conditioning and Video Diffusion NVS}
+
+A particularly important frontier is conditioning diffusion models on
+\emph{continuous camera trajectories}, enabling the generation of smooth,
+temporally coherent novel-view sequences---the direct bridge to world modeling.
+
+\paragraph{Camera trajectory as a control signal.}
+ViewCrafter~\citep{yu2024viewcrafter} conditions a video diffusion model
+(CogVideoX) on point-cloud renderings along a target camera path, using
+the rendered point cloud as a structural scaffold that prevents temporal
+drift while the diffusion model fills in appearance and fine geometry.
+Free3D~\citep{zheng2023free3d} injects camera pose into each frame's
+cross-attention query, enabling a single video diffusion model to follow
+arbitrary camera trajectories from a single reference image.
+Novel View Extrapolation~\citep{shi2024nve} specifically targets
+\emph{large-angle extrapolation}---the regime where geometric hallucination
+is most necessary---using video diffusion priors to maintain perceptual
+plausibility when the reference content provides little direct evidence.
+
+\paragraph{Training-free and zero-shot camera control.}
+NVS-Solver~\citep{you2024nvssolver} demonstrates that an off-the-shelf video
+diffusion model already encodes sufficient geometric knowledge to solve
+NVS in a zero-shot manner: by formulating view synthesis as a constrained
+diffusion process with known-region guidance, it achieves competitive performance
+without any pose-specific fine-tuning.
+DDIM Inversion for NVS~\citep{xu2024ddim_nvs} exploits the deterministic
+reconstruction property of DDIM~\citep{song2020ddim}: inverting the reference
+image to its latent code and re-decoding with a modified pose conditioning
+produces structurally faithful novel views, again without additional training.
+
+\paragraph{Geometric conditioning for high fidelity.}
+Projected Representation Conditioning~\citep{han2024prc} proposes projecting
+3-D features from the reference view onto the target-view image plane,
+providing an explicit geometric ``warp'' prior to the diffusion decoder.
+This projected feature conditioning substantially reduces hallucination artifacts
+in regions visible from the target but occluded in the reference.
+A Single Image and Multimodality~\citep{tang2024smm} augments pose conditioning
+with depth, surface normal, and semantic maps, each derived from monocular
+estimation, to enrich the conditioning signal across multiple complementary
+geometric cues.
+
+\subsubsection{Reconstruction--Diffusion Hybrids}
+
+A complementary design philosophy \emph{separates} the diffusion and reconstruction
+stages: diffusion fills in missing views and hallucinations, while a deterministic
+reconstruction pipeline (NeRF or 3DGS) enforces 3-D consistency.
+
+Cat3D~\citep{gao2024cat3d} exemplifies this pattern: given sparse reference
+views ($n\geq1$), a multi-view diffusion model generates a dense set of
+synthetic pseudo-views, which are then fed to a standard 3DGS reconstruction
+pipeline.
+Because the diffusion model is fine-tuned jointly with the reconstruction loss,
+the generated views are explicitly optimised for downstream reconstruction fidelity.
+ReconFusion~\citep{wu2024reconfusion} integrates the diffusion prior more tightly:
+it conditions a pixel-diffusion model on pixelNeRF~\citep{yu2021pixelnerf}
+feature queries, acting as a learned regulariser that fills in uncertain regions
+during sparse-view NeRF optimisation.
+ZeroNVS~\citep{sargent2023zeronvs} handles the challenging case of
+in-the-wild single images (non-object-centric, background present) by training
+on scene-level data and conditioning on the camera intrinsics alongside pose,
+enabling 360$^\circ$ generation from a single casual photograph.
+NVComposer~\citep{li2024nvcomposer} addresses the case where multiple reference
+views are available but unposed: a feature composition network aggregates
+information from all reference images before passing to the diffusion model,
+improving quality without requiring explicit pose estimation.
+
+\subsection{Score Distillation: Diffusion as a 3-D Optimisation Oracle}
+
+Score Distillation Sampling (SDS)~\citep{poole2023dreamfusion} opened a
+separate pathway: instead of directly generating novel views, use a
+pre-trained 2-D diffusion model as a differentiable \emph{score function}
+to optimise a 3-D representation.
+The core identity is:
+\begin{equation}
+  \nabla_\theta \mathcal{L}_\text{SDS}
+  = \mathbb{E}_{t,\boldsymbol{\epsilon}}\!\left[
+    w(t)\!\left(
+      \hat{\boldsymbol{\epsilon}}_\phi(\mathbf{x}_t; y, t)
+      - \boldsymbol{\epsilon}
+    \right)\frac{\partial \mathbf{x}}{\partial \theta}
+  \right],
+  \label{eq:sds}
+\end{equation}
+where $\theta$ parameterises the 3-D representation, $\mathbf{x}$ is a rendered
+image, $y$ is a text prompt, and $\hat{\boldsymbol{\epsilon}}_\phi$ is the
+diffusion model's noise prediction.
+
+DreamFusion~\citep{poole2023dreamfusion} first demonstrated that SDS can
+synthesise coherent 3-D objects from text descriptions.
+Magic3D~\citep{lin2023magic3d} introduces a coarse-to-fine strategy that
+first optimises a coarse NeRF then refines a differentiable mesh, achieving
+$8\times$ higher resolution.
+ProlificDreamer~\citep{wang2023prolificdreamer} identifies the ``over-saturation''
+artifact of SDS as a consequence of mode-seeking behaviour, proposing
+\emph{Variational Score Distillation} (VSD) which models the 3-D parameter
+distribution as a particle set and applies Stein variational gradient descent
+for diverse, high-quality generation.
+Fantasia3D~\citep{chen2023fantasia3d} disentangles geometry (optimised via
+SDS on a DMTet mesh) from appearance (a physically-based BRDF), enabling
+photorealistic materials and independent editing of shape and texture.
+GaussianDreamer~\citep{yi2024gaussiandreamer} replaces NeRF with 3DGS as the
+SDS target, leveraging Gaussian densification for fine detail and achieving
+real-time rendering of the final asset.
+LucidDreamer~\citep{chung2023luciddreamer} addresses SDS instability with an
+interval-based score matching scheme that reduces gradient variance.
+
+\subsection{Dedicated Multi-View Diffusion Architectures}
+
+The methods above predominantly adapt existing video or image diffusion models.
+A complementary line of work designs architectures \emph{from scratch} for
+multi-view consistency.
+
+MVDream~\citep{shi2023mvdream} replaces temporal attention with multi-view
+attention and trains on Objaverse with ground-truth camera poses, producing
+natively 3-D-consistent outputs.
+ImageDream~\citep{wang2024imagedream} extends MVDream to image-conditioned
+generation, enabling single-image-to-3D with strong semantic fidelity.
+Zero123-XL~\citep{zero123xl2023} scales the Zero-1-to-3 paradigm to larger
+model capacities and more diverse training data.
+Direct3D~\citep{wu2024direct3d} trains a native 3-D latent diffusion model
+on a triplane latent space, enabling direct 3-D generation without a two-stage
+pipeline.
+
+Table~\ref{tab:generative_methods} provides a structured comparison of generative
+\nvs{} methods across the four paradigms above.
 
 \begin{table}[t]
   \centering
-  \caption{Generative NVS methods.}
+  \caption{Generative NVS methods. \textbf{Backbone}: LDM=latent diffusion,
+    VDM=video diffusion, GAN=generative adversarial.
+    \textbf{Ctrl}: pose conditioning mechanism.
+    \textbf{3D Out}: whether the method produces an explicit 3-D representation.}
   \label{tab:generative_methods}
-  \scriptsize
-  \setlength{\tabcolsep}{2.5pt}
-  \begin{tabular}{@{}llccccc@{}}
+  \small
+  \setlength{\tabcolsep}{2pt}
+  \begin{tabular}{@{}llllccc@{}}
     \toprule
     \textbf{Method} & \textbf{Venue}
-      & \textbf{Backbone} & \textbf{Input}
-      & \textbf{3D Cons.} & \textbf{3D Output} & \textbf{Key Idea} \\
+      & \textbf{Backbone} & \textbf{Ctrl}
+      & \textbf{3D Cons.} & \textbf{3D Out} & \textbf{Key Contribution} \\
     \midrule
-    GRAF~\citep{schwarz2020graf}                & NeurIPS'20 & NeRF-GAN  & Noise & \pt & NeRF   & Radiance field GAN \\
-    pi-GAN~\citep{chan2021pigan}                & CVPR'21    & NeRF-GAN  & Noise & \pt & NeRF   & Periodic implicit GAN \\
-    GIRAFFE~\citep{niemeyer2021giraffe}         & CVPR'21    & Feature F.& Noise & \pt & Neural & Compositional fields \\
-    EG3D~\citep{chan2022efficient}              & CVPR'22    & Triplane  & Noise & \yes& Tri.   & Triplane+SR \\
-    StyleNeRF~\citep{gu2022stylenerf}           & ICLR'22    & StyleGAN  & Noise & \pt & NeRF   & StyleGAN+NeRF \\
-    Zero-1-to-3~\citep{liu2023zero1to3}         & ICCV'23    & LDM       & 1 img & \pt & None   & Pose-cond. LDM \\
-    SyncDreamer~\citep{liu2023syncdreamer}      & arXiv'23   & LDM       & 1 img & \yes& None   & Sync multi-view \\
-    One-2-3-45~\citep{liu2023one2345}           & NeurIPS'23 & LDM+MVS   & 1 img & \yes& Mesh   & Diff$\to$3D \\
-    Zero123++~\citep{shi2023zero123pp}          & arXiv'23   & LDM       & 1 img & \pt & None   & Improved Zero123 \\
-    MVDream~\citep{shi2023mvdream}              & ICLR'24    & LDM       & Text  & \yes& None   & 3D-aware MV diff. \\
-    Wonder3D~\citep{long2024wonder3d}           & CVPR'24    & LDM       & 1 img & \yes& None   & Cross-domain diff. \\
-    DreamFusion~\citep{poole2023dreamfusion}    & ICLR'23    & LDM+NeRF  & Text  & \pt & NeRF   & SDS \\
-    Magic3D~\citep{lin2023magic3d}              & CVPR'23    & LDM+Mesh  & Text  & \pt & Mesh   & Coarse-to-fine SDS \\
-    ProlificDreamer~\citep{wang2023prolificdreamer}& NeurIPS'23& LDM+NeRF & Text & \pt & NeRF  & Variational SDS \\
-    GaussianDreamer~\citep{yi2024gaussiandreamer}& CVPR'24  & LDM+3DGS  & Text  & \pt & 3DGS   & SDS+3DGS \\
-    Cat3D~\citep{gao2024cat3d}                  & arXiv'24   & MV-Diff   & Sparse& \yes& 3DGS  & MV diff+recon \\
-    ReconFusion~\citep{wu2024reconfusion}       & CVPR'24    & MV-Diff   & Sparse& \yes& NeRF   & Diff prior+recon \\
-    GeNVS~\citep{chan2023genvs}                 & ICLR'23    & LDM       & Sparse& \pt & NeRF   & NeRF-cond diff. \\
+    \multicolumn{7}{@{}l}{\textit{GAN-based}} \\
+    GRAF~\citep{schwarz2020graf}                & NeurIPS'20 & NeRF-GAN   & Latent  & \pt & NeRF   & Radiance field GAN \\
+    pi-GAN~\citep{chan2021pigan}                & CVPR'21    & NeRF-GAN   & Latent  & \pt & NeRF   & Periodic implicit \\
+    GIRAFFE~\citep{niemeyer2021giraffe}         & CVPR'21    & Feat. Field& Latent  & \pt & Neural & Compositional \\
+    EG3D~\citep{chan2022efficient}              & CVPR'22    & Triplane   & Latent  & \yes& Tri.   & Triplane+SR \\
+    StyleNeRF~\citep{gu2022stylenerf}           & ICLR'22    & StyleGAN   & Latent  & \pt & NeRF   & Style-based NeRF \\
+    \midrule
+    \multicolumn{7}{@{}l}{\textit{Pose-conditioned single-image diffusion}} \\
+    Zero-1-to-3~\citep{liu2023zero1to3}         & ICCV'23    & LDM        & $\Delta$pose & \pt & -- & Pose-cond LDM \\
+    Zero123++~\citep{shi2023zero123pp}          & arXiv'23   & LDM        & $\Delta$pose & \pt & -- & 6-view grid \\
+    One-2-3-45~\citep{liu2023one2345}           & NeurIPS'23 & LDM+MVS    & $\Delta$pose & \yes& Mesh & Diff$\to$MVS \\
+    SyncDreamer~\citep{liu2023syncdreamer}      & ICLR'24    & LDM        & $\Delta$pose & \yes& -- & Volume sync \\
+    Wonder3D~\citep{long2024wonder3d}           & CVPR'24    & LDM        & $\Delta$pose & \yes& -- & RGB+Normal \\
+    EscherNet~\citep{kong2024eschernet}         & CVPR'24    & LDM        & CaPE    & \yes& -- & Arbitrary \#views \\
+    ViVid-1-to-3~\citep{kwak2024vivid}          & arXiv'24   & VDM        & $\Delta$pose & \pt & -- & Video=NVS axis \\
+    \midrule
+    \multicolumn{7}{@{}l}{\textit{Camera trajectory / video diffusion}} \\
+    Free3D~\citep{zheng2023free3d}              & ICLR'24    & VDM        & Cam embed& \pt & -- & Per-frame pose \\
+    ViewCrafter~\citep{yu2024viewcrafter}       & arXiv'24   & VDM        & Ptcloud  & \yes& -- & Scaffold+VDM \\
+    NVS-Solver~\citep{you2024nvssolver}         & arXiv'24   & VDM        & Zero-shot& \pt & -- & Guided diffusion \\
+    DDIM Inversion~\citep{xu2024ddim_nvs}       & arXiv'24   & LDM        & Inversion& \pt & -- & Training-free \\
+    GeoNVS~\citep{chen2024geonvs}               & arXiv'24   & VDM        & Ptcloud  & \yes& -- & Geo-grounded VDM \\
+    Proj. Repr. Cond.~\citep{han2024prc}        & arXiv'24   & LDM        & 3D proj. & \yes& -- & Feature warp \\
+    Novel View Extrap.~\citep{shi2024nve}       & arXiv'24   & VDM        & Cam traj.& \pt & -- & Large-angle extrap.\\
+    \midrule
+    \multicolumn{7}{@{}l}{\textit{Reconstruction--diffusion hybrids}} \\
+    GeNVS~\citep{chan2023genvs}                 & ICLR'23    & LDM        & NeRF feat& \yes& NeRF & NeRF-cond diff. \\
+    ZeroNVS~\citep{sargent2023zeronvs}          & CVPR'24    & LDM        & Pose+int.& \pt & -- & In-the-wild \\
+    ReconFusion~\citep{wu2024reconfusion}       & CVPR'24    & LDM        & pixelNeRF& \yes& NeRF & Diff reg. \\
+    Cat3D~\citep{gao2024cat3d}                  & NeurIPS'24 & MV-Diff    & $\Delta$pose & \yes& 3DGS& MV gen+recon \\
+    NVComposer~\citep{li2024nvcomposer}         & arXiv'24   & LDM        & Feature  & \yes& -- & Unposed multi-view\\
+    Proj. Repr. Cond.~\citep{han2024prc}        & arXiv'24   & LDM        & 3D proj. & \yes& -- & Projected feat.\\
+    \midrule
+    \multicolumn{7}{@{}l}{\textit{Score distillation (text-to-3D)}} \\
+    DreamFusion~\citep{poole2023dreamfusion}    & ICLR'23    & LDM+NeRF   & SDS      & \pt & NeRF & SDS \\
+    Magic3D~\citep{lin2023magic3d}              & CVPR'23    & LDM+Mesh   & SDS      & \pt & Mesh & C2F SDS \\
+    ProlificDreamer~\citep{wang2023prolificdreamer}& NeurIPS'23& LDM+NeRF & VSD      & \pt & NeRF & VSD \\
+    Fantasia3D~\citep{chen2023fantasia3d}       & ICCV'23    & LDM+Mesh   & SDS      & \pt & BRDF & Disentangled \\
+    GaussianDreamer~\citep{yi2024gaussiandreamer}& CVPR'24   & LDM+3DGS   & SDS      & \pt & 3DGS & SDS+3DGS \\
     \bottomrule
   \end{tabular}
 \end{table}
+
+\paragraph{Implications for World Modeling.}
+Diffusion-based \nvs{} represents a critical advance along World Modeling
+Axis~2 (sparse/single-image generalisation, \textbf{D2}) and provides
+the generative prior essential for completing unobserved scene regions
+(Axis~1, geometric consistency \textbf{D1}).
+Camera trajectory conditioning (\S\ref{sec:diffusion_nvs}) directly bridges
+into Axis~3 (temporal dynamics), as a camera trajectory can be viewed as
+a special case of a time-ordered action sequence.
+The remaining gap is \emph{physical action conditioning} (\textbf{D4, D5}):
+existing diffusion NVS methods condition on camera parameters but not on
+object-level physical interactions, which remains an open problem
+addressed in \S\ref{sec:open}.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Towards Generative World Modeling}
@@ -2324,6 +2621,59 @@ Non-aligned reference image quality assessment for novel view synthesis.
 K.~Chen \etal
 InSpatio-WorldFM: An open-source real-time generative frame model.
 \emph{arXiv}, 2025.
+
+% ── Additional references for v0.5 quality pass ────────────────────────────
+
+\bibitem{kajiya1984ray}
+J.~T.~Kajiya and B.~P.~Von~Herzen.
+Ray tracing volume densities.
+\emph{SIGGRAPH}, 1984.
+
+\bibitem{tancik2020fourier}
+M.~Tancik \etal
+Fourier features let networks learn high frequency functions in low dimensional
+domains.
+\emph{NeurIPS}, 2020.
+
+\bibitem{ho2020ddpm}
+J.~Ho, A.~Jain, and P.~Abbeel.
+Denoising diffusion probabilistic models.
+\emph{NeurIPS}, 2020.
+
+\bibitem{song2020ddim}
+J.~Song, C.~Meng, and S.~Ermon.
+Denoising diffusion implicit models.
+\emph{ICLR}, 2021.
+
+\bibitem{karras2019stylegan2}
+T.~Karras, S.~Laine, M.~Aittala, J.~Hellsten, J.~Lehtinen, and T.~Aila.
+Analyzing and improving the image quality of StyleGAN.
+\emph{CVPR}, 2020.
+
+\bibitem{sitzmann2020siren}
+V.~Sitzmann, J.~Martel, A.~Bergman, D.~Lindell, and G.~Wetzstein.
+Implicit neural representations with periodic activation functions.
+\emph{NeurIPS}, 2020.
+
+\bibitem{kirillov2023sam}
+A.~Kirillov \etal
+Segment Anything.
+\emph{ICCV}, 2023.
+
+\bibitem{zero123xl2023}
+R.~Liu \etal
+Zero-1-to-3-XL: Zero-shot one image to 3D object (extended scale).
+\emph{arXiv:2311.09093}, 2023.
+
+\bibitem{wang2024imagedream}
+P.~Wang and Y.~Shi.
+ImageDream: Image-prompt multi-view diffusion for 3D generation.
+\emph{arXiv:2312.02201}, 2024.
+
+\bibitem{wu2024direct3d}
+C.~Wu \etal
+Direct3D: Scalable image-to-3D generation via 3D latent diffusion transformer.
+\emph{arXiv:2405.14832}, 2024.
 
 \end{thebibliography}
 
