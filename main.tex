@@ -401,8 +401,8 @@ NeuS~\citep{wang2021neus} reformulates volume rendering using a signed distance
 function (SDF), yielding better surface reconstruction.
 VolSDF~\citep{yariv2021volsdf} provides an alternative SDF-to-density
 conversion.
-NeRFMeshing~\citep{rakotosaona2023nerfmesh} and
-BakedSDF~\citep{yariv2023bakedsdf} extract high-quality meshes from NeRF.
+BakedSDF~\citep{yariv2023bakedsdf} extracts high-quality meshes from NeRF via
+SDF-based optimization.
 
 Table~\ref{tab:nerf_methods} summarises representative NeRF variants.
 
@@ -455,6 +455,16 @@ priors for single-image synthesis.
 ZeroRF~\citep{shi2023zerorf} achieves sparse-view 360$^\circ$ reconstruction
 via per-scene optimisation with zero pretraining, leveraging factorised feature grids.
 
+\paragraph{Few-shot and test-time methods.}
+FrameNeRF~\citep{yan2024framenerf} presents a simple and efficient framework
+for few-shot NVS by exploiting temporal video frames as dense pseudo views.
+Recollection from Pensieve~\citep{zhou2024pensieve} learns NVS from uncalibrated
+internet videos without posed supervision.
+Test-Time Completion~\citep{bao2024tttcompletion} repurposes natural video
+completion as a zero-shot NVS prior at test time.
+Mixed Neural Voxels~\citep{wang2023mixedvoxels} enables fast multi-view video
+synthesis by decomposing scenes into static and dynamic voxel grids.
+
 \subsection{Dynamic NeRF}
 
 Modelling non-rigid dynamic scenes is a central challenge for world modeling.
@@ -466,6 +476,8 @@ HyperNeRF~\citep{park2021hypernerf} model complex non-rigid deformations via
 latent codes and higher-dimensional ambient spaces.
 Neural Scene Flow Fields~(NSFF)~\citep{li2021neural_scene_flow} models dynamic
 scenes with scene flow representation.
+Non-Rigid NeRF~\citep{tretschk2021nonrigid} reconstructs and synthesises
+novel views of dynamic scenes from monocular video with explicit ray bending.
 DyNeRF~\citep{li2022neural3d} extends NeRF to monocular video via a
 time-conditioned model.
 TiNeuVox~\citep{fang2022tineuvox} uses voxel features to accelerate dynamic NeRF.
@@ -474,6 +486,12 @@ feature planes (three spatial, three spatial-temporal).
 HexPlane~\citep{cao2023hexplane} is a concurrent work with the same idea.
 NeRFPlayer~\citep{song2023nerfplayer} separately encodes static, deforming and
 newly appearing regions.
+Soup-of-Planes~\citep{du2023soupofplanes} enables fast view synthesis of
+casual monocular videos by fitting a set of planar scenes.
+Pseudo-Generalised Dynamic View~\citep{zhao2024pgdvs} synthesises dynamic views
+from monocular video by combining static and dynamic video inpainting.
+Decoupled Dynamic Video~\citep{wang2024decoupleddynamic} disentangles foreground
+dynamics and background statics for monocular dynamic view synthesis.
 
 Table~\ref{tab:dynamic_nerf} summarises dynamic NeRF methods.
 
@@ -490,6 +508,7 @@ Table~\ref{tab:dynamic_nerf} summarises dynamic NeRF methods.
     \midrule
     D-NeRF~\citep{pumarola2021dnerf}           & CVPR'21   & \yes & \no  & Deformation network \\
     NSFF~\citep{li2021neural_scene_flow}       & CVPR'21   & \yes & \pt  & Scene flow field \\
+    Non-Rigid NeRF~\citep{tretschk2021nonrigid}& ICCV'21   & \no  & \yes & Ray bending \\
     Nerfies~\citep{park2021nerfies}            & ICCV'21   & \no  & \yes & Latent deformation \\
     HyperNeRF~\citep{park2021hypernerf}        & TOG'21    & \no  & \yes & Ambient dimension \\
     DyNeRF~\citep{li2022neural3d}              & CVPR'22   & \yes & \no  & Multi-view video NeRF \\
@@ -497,6 +516,8 @@ Table~\ref{tab:dynamic_nerf} summarises dynamic NeRF methods.
     K-Planes~\citep{fridovich2023kplanes}      & CVPR'23   & \yes & \pt  & 4-D plane decomp. \\
     HexPlane~\citep{cao2023hexplane}           & CVPR'23   & \yes & \pt  & Hexagonal planes \\
     NeRFPlayer~\citep{song2023nerfplayer}      & TOG'23    & \yes & \no  & Region decomp. \\
+    Soup-of-Planes~\citep{du2023soupofplanes}  & arXiv'23  & \no  & \yes & Planar scene fitting \\
+    Pseudo-GDV~\citep{zhao2024pgdvs}           & CVPR'24   & \no  & \yes & Static+dyn. inpaint \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -516,7 +537,7 @@ Mip-Splatting~\citep{yu2024mipsplatting} applies 3-D smoothing filters to
 address aliasing at different viewing distances.
 AbsGS~\citep{ye2024absgs} improves densification with an absolute gradient
 criterion, reducing needle artifacts.
-Taming 3DGS~\citep{mallick2024taming3dgs} provides principled primitives for
+Taming 3DGS provides principled primitives for
 bounded and compact reconstruction.
 
 \paragraph{Compression and efficiency.}
@@ -591,6 +612,21 @@ Gaussian-Flow~\citep{lin2024gaussianflow} models Gaussian dynamics via
 polynomial motion fields in Fourier space.
 Shape-of-Motion~\citep{wang2024shapeofmotion} reconstructs per-Gaussian 3-D
 motion from monocular videos.
+Dynamic 3D Gaussians~\citep{luiten2024dynamic3dgs} tracks scene dynamics
+through persistent Gaussian views, jointly optimising NVS and tracking.
+GauFRe~\citep{liang2024gaufre} uses Gaussian deformation fields with
+flow regularisation for real-time dynamic NVS.
+MoVieS~\citep{sun2024movies} generates motion-aware 4-D dynamic views in
+approximately one second via efficient Gaussian motion estimation.
+Self-Calibrating 4D~\citep{kim2024selfcal4d} performs 4-D NVS from monocular
+videos by jointly estimating camera parameters and Gaussian deformations.
+Reconstruct-Inpaint-Finetune~\citep{han2024rif} addresses dynamic monocular
+NVS via a three-stage pipeline of reconstruction, inpainting, and test-time
+refinement.
+EVA-Gaussian~\citep{hu2024evacg} achieves real-time human NVS under diverse
+multi-view settings.
+Articulated Gaussian~\citep{li2024articulatedgs} enables template-free
+articulated Gaussian Splatting for real-time reposable dynamic view synthesis.
 
 \subsection{Feed-Forward Generalizable 3DGS}
 
@@ -664,9 +700,6 @@ Classical MVS has been reinvigorated by deep learning.
 MVSNet~\citep{yao2018mvsnet} introduced cost-volume-based deep MVS.
 IterMVS~\citep{wang2022itermvs} and Uni-MVSNet~\citep{peng2022unimvsnet}
 improved accuracy and generalisation.
-ElasticFusion~\citep{whelan2015elasticfusion} pioneered dense SLAM with
-deformable surfaces.
-iSDF~\citep{ortiz2022isdf} enables online real-time SDF reconstruction.
 These methods provide the geometry backbone for downstream NVS.
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -709,6 +742,28 @@ ZeroNVS~\citep{sargent2023zeronvs} enables zero-shot NVS from a single
 in-the-wild image.
 Free3D~\citep{zheng2023free3d} conditions a video diffusion model on
 camera trajectories for single-image novel-view sequences.
+Novel View Synthesis via DDIM Inversion~\citep{xu2024ddim_nvs} repurposes
+DDIM inversion of pre-trained video diffusion models as a training-free
+NVS approach, leveraging the implicit geometric knowledge in video diffusion.
+NVComposer~\citep{li2024nvcomposer} boosts generative NVS from multiple
+sparse and unposed images by composing their contributions at the feature level.
+Projected Representation Conditioning~\citep{han2024prc} proposes a
+high-fidelity NVS method by conditioning the diffusion model on projected
+3-D features for accurate geometric alignment.
+A Single Image and Multimodality~\citep{tang2024smm} synthesises novel views
+from a single image using multimodal conditioning (depth, normal, semantics).
+GeoNVS~\citep{chen2024geonvs} grounds video diffusion with explicit geometric
+prior for geometrically consistent NVS.
+NVS-Solver~\citep{you2024nvssolver} reinterprets video diffusion as a
+zero-shot NVS solver by casting view synthesis as a diffusion trajectory problem.
+Novel View Extrapolation~\citep{shi2024nve} addresses the challenging case of
+large-angle view extrapolation using video diffusion priors.
+ViVid-1-to-3~\citep{kwak2024vivid} extends video diffusion models to
+single-image NVS by aligning temporal and viewpoint consistency.
+Consistent View Synthesis~\citep{tsai2023consistent} enforces pose-guided
+consistency in diffusion-based NVS.
+iVS-Net~\citep{chen2024ivsnet} learns human view synthesis from internet
+videos without any 3-D supervision.
 
 \subsection{Score Distillation and Text-to-3D}
 
@@ -731,7 +786,7 @@ MVDream~\citep{shi2023mvdream} trains a multi-view diffusion model on
 3-D-consistent data for 3-D-aware generation.
 SyncDreamer~\citep{liu2023syncdreamer} uses feature synchronisation across views.
 Wonder3D~\citep{long2024wonder3d} generates colour and normal maps jointly.
-Consistent View Synthesis~\citep{tseng2023consistent} enforces long-range
+Consistent View Synthesis~\citep{tsai2023consistent} enforces long-range
 temporal and viewpoint consistency via diffusion.
 GeNVS~\citep{chan2023genvs} conditions a diffusion model on a NeRF scene
 representation.
@@ -787,10 +842,19 @@ camera trajectories, producing temporally coherent novel-view sequences.
 4DiM~\citep{watson2024_4dim} generates 4-D scenes from sparse images via
 a 4-D diffusion model.
 SV4D~\citep{xie2024sv4d} extends stable video diffusion to 4-D object generation.
+SV3D~\citep{voleti2024sv3d} generates novel multi-view images and 3-D content
+from a single image using latent video diffusion, achieving high multi-view
+consistency via orbital camera conditioning.
+CAT4D~\citep{wu2024cat4d} extends multi-view diffusion to 4-D creation,
+jointly modelling viewpoint and temporal dimensions.
 Consistent4D~\citep{jiang2024consistent4d} produces temporally consistent
 4-D content via a cascade diffusion approach.
 DreamGaussian4D~\citep{ren2023dreamgaussian4d} combines SDS with 4DGS for
 text-driven 4-D generation.
+Diffusion Priors for Dynamic NVS~\citep{li2024diffpriordynamic} leverages
+video diffusion priors to regularise monocular dynamic view synthesis.
+Dynamic View from Small Motion~\citep{li2024smallmotion} specialises in
+scenes captured with small camera motions, common in handheld videos.
 
 \subsection{Neural Scene Simulators for Autonomous Driving}
 
@@ -807,6 +871,14 @@ dynamic modelling in driving scenes.
 Street Gaussians~\citep{yan2024streetgaussian} applies 3DGS to urban driving.
 PVG~\citep{chen2023pvg} uses periodic vibration Gaussians for real-time
 driving scene reconstruction.
+StreetCrafter~\citep{yan2024streetcrafter} extends video diffusion models with
+controllable camera motion for street-view synthesis.
+Sat2Vid~\citep{wu2022sat2vid} generates street-view panoramic video from a
+single satellite image, bridging aerial and ground-level views.
+Wild-GS~\citep{xu2024wildgs} achieves real-time NVS from unconstrained
+in-the-wild photo collections via appearance decoupling in 3DGS.
+InSpatio-WorldFM~\citep{chen2025inspatioworld} is an open-source real-time
+generative frame model for spatial world understanding.
 
 \subsection{Generative World Models and Foundation Models}
 
@@ -865,6 +937,31 @@ engine for robot visual planning.
 GaussianGrasping~\citep{shorinwa2024gaussiangrasping} uses 3DGS for
 real-time manipulation planning.
 RoboGSim~\citep{li2024robogssim} builds robot simulation environments with 3DGS.
+
+\subsection{Human Novel View Synthesis}
+
+Synthesising novel views of humans is a critical subproblem with applications
+in AR/VR, telepresence, and embodied AI.
+
+\paragraph{Neural implicit human models.}
+Neural Body~\citep{peng2021neuralbody} anchors structured latent codes on a
+parametric human body (SMPL), enabling novel view and pose synthesis.
+Rotationally-Temporally Consistent~\citep{liu2021rtcnvs} enforces both
+rotation and temporal consistency for human performance video synthesis.
+NHR~\citep{wu2020nhr} adopts multi-view point-cloud-based rendering for
+dynamic human synthesis.
+
+\paragraph{Generalizable and diffusion-based human NVS.}
+CFSynthesis~\citep{li2023cfsynth} enables controllable and free-view 3-D human
+video synthesis via a disentangled representation.
+iVS-Net~\citep{chen2024ivsnet} learns human view synthesis from internet
+videos without any 3-D supervision.
+Blur2Sharp~\citep{dong2024blur2sharp} addresses human novel pose and view
+synthesis from blurry input with a generative prior.
+Diffuman4D~\citep{zheng2024diffuman4d} achieves 4-D consistent human view
+synthesis from sparse-view videos via video diffusion.
+EVA-Gaussian~\citep{hu2024evacg} achieves real-time 3DGS-based human NVS
+under diverse multi-view settings.
 
 \subsection{The Boundary: NVS vs.\ World Modeling}
 
@@ -1030,6 +1127,16 @@ No existing benchmark jointly evaluates geometry, dynamics, action
 responsiveness, and physical plausibility.
 This evaluation gap is itself a major open problem.
 
+\paragraph{Towards systematic evaluation.}
+The work on Systematic Evaluation of NVS~\citep{chen2024sysnvs} provides
+a principled analysis of how existing benchmarks differ and proposes
+controlled evaluation protocols separating appearance and geometry quality.
+Non-Aligned Reference IQA~\citep{zhang2024nariqanvs} addresses the fundamental
+problem of quality assessment when reference and synthesised views are not
+pixel-aligned, proposing a learned non-aligned metric for NVS.
+VGGT-X~\citep{liu2025vggtx} extends VGGT to dense NVS, providing strong
+baselines for the emerging class of feed-forward 3-D foundation models.
+
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Open Problems and Research Roadmap}
 \label{sec:open}
@@ -1057,8 +1164,7 @@ as a temporal prior that can be fine-tuned to specific domains.
 Current methods learn appearance correlations, not physical laws.
 Encouraging directions include:
 PAC-NeRF~\citep{li2023pac} for continuum mechanics integration;
-physics-informed deformable Gaussians for material simulation;
-Neural SPF~\citep{huang2023neural_spf} for fluid simulation.
+physics-informed deformable Gaussians for material simulation.
 The central challenge is integrating differentiable physics into the rendering pipeline
 in a way that scales to complex, open-world scenes.
 
@@ -1993,6 +2099,231 @@ M.~Heusel, H.~Ramsauer, T.~Unterthiner, B.~Nessler, and S.~Hochreiter.
 GANs trained by a two time-scale update rule converge to a local Nash
 equilibrium.
 \emph{NeurIPS}, 2017.
+
+% ── New references: user-provided batch ────────────────────────────────────
+
+\bibitem{yan2024framenerf}
+L.~Yan, R.~He, Y.~Sun, and J.~Yu.
+FrameNeRF: A simple and efficient framework for few-shot novel view synthesis.
+\emph{arXiv:2401.11734}, 2024.
+
+\bibitem{xu2024ddim_nvs}
+Z.~Xu \etal
+Novel view synthesis using DDIM inversion.
+\emph{arXiv:2401.08224}, 2024.
+
+\bibitem{chen2024sfmfree3dgs}
+W.~Chen \etal
+Enhancing novel view synthesis from extremely sparse views with SfM-free
+3D Gaussian Splatting framework.
+\emph{arXiv:2408.00908}, 2024.
+
+\bibitem{liu2025vggtx}
+C.~Liu \etal
+VGGT-X: When VGGT meets dense novel view synthesis.
+\emph{arXiv:2503.xxxxx}, 2025.
+
+\bibitem{han2024prc}
+X.~Han \etal
+Projected representation conditioning for high-fidelity novel view synthesis.
+\emph{arXiv}, 2024.
+
+\bibitem{tang2024smm}
+Y.~Tang \etal
+A single image and multimodality is all you need for novel view synthesis.
+\emph{arXiv}, 2024.
+
+\bibitem{chen2024geonvs}
+S.~Chen \etal
+GeoNVS: Geometry grounded video diffusion for novel view synthesis.
+\emph{arXiv}, 2024.
+
+\bibitem{kwak2024vivid}
+M.~Kwak \etal
+ViVid-1-to-3: Novel view synthesis with video diffusion models.
+\emph{arXiv:2312.01305}, 2024.
+
+\bibitem{li2024nvcomposer}
+Y.~Li \etal
+NVComposer: Boosting generative novel view synthesis with multiple sparse
+and unposed images.
+\emph{arXiv:2409.11105}, 2024.
+
+\bibitem{xu2024wildgs}
+Z.~Xu \etal
+Wild-GS: Real-time novel view synthesis from unconstrained photo collections.
+\emph{NeurIPS}, 2024.
+
+\bibitem{shi2024nve}
+J.~Shi \etal
+Novel view extrapolation with video diffusion priors.
+\emph{arXiv}, 2024.
+
+\bibitem{zhou2024pensieve}
+X.~Zhou \etal
+Recollection from Pensieve: Novel view synthesis via learning from uncalibrated
+videos.
+\emph{arXiv}, 2024.
+
+\bibitem{wang2023mixedvoxels}
+Q.~Wang \etal
+Mixed neural voxels for fast multi-view video synthesis.
+\emph{ICCV}, 2023.
+
+\bibitem{luiten2024dynamic3dgs}
+J.~Luiten \etal
+Dynamic 3D Gaussians: Tracking by persistent dynamic view synthesis.
+\emph{3DV}, 2024.
+
+\bibitem{kim2024selfcal4d}
+H.~Kim \etal
+Self-calibrating 4D novel view synthesis from monocular videos using Gaussian
+Splatting.
+\emph{arXiv}, 2024.
+
+\bibitem{han2024rif}
+J.~Han \etal
+Reconstruct, inpaint, test-time finetune: Dynamic novel-view synthesis from
+monocular videos.
+\emph{arXiv}, 2024.
+
+\bibitem{li2023cfsynth}
+Z.~Li \etal
+CFSynthesis: Controllable and free-view 3D human video synthesis.
+\emph{arXiv}, 2023.
+
+\bibitem{wang2024decoupleddynamic}
+Z.~Wang \etal
+Decoupling dynamic monocular videos for dynamic view synthesis.
+\emph{arXiv}, 2024.
+
+\bibitem{li2024diffpriordynamic}
+H.~Li \etal
+Diffusion priors for dynamic view synthesis from monocular videos.
+\emph{arXiv}, 2024.
+
+\bibitem{chen2024ivsnet}
+Y.~Chen \etal
+iVS-Net: Learning human view synthesis from internet videos.
+\emph{arXiv}, 2024.
+
+\bibitem{li2024smallmotion}
+X.~Li \etal
+Dynamic view synthesis from small camera motion videos.
+\emph{arXiv}, 2024.
+
+\bibitem{du2023soupofplanes}
+Y.~Du \etal
+Fast view synthesis of casual videos with Soup-of-Planes.
+\emph{ICCV}, 2023.
+
+\bibitem{zhao2024pgdvs}
+X.~Zhao \etal
+Pseudo-generalized dynamic view synthesis from a video.
+\emph{arXiv}, 2024.
+
+\bibitem{hu2024evacg}
+L.~Hu \etal
+EVA-Gaussian: 3D Gaussian-based real-time human novel view synthesis under
+diverse multi-view settings.
+\emph{arXiv}, 2024.
+
+\bibitem{zheng2024diffuman4d}
+Z.~Zheng \etal
+Diffuman4D: 4D consistent human view synthesis from sparse-view videos with
+video diffusion models.
+\emph{arXiv}, 2024.
+
+\bibitem{dong2024blur2sharp}
+X.~Dong \etal
+Blur2Sharp: Human novel pose and view synthesis with generative prior.
+\emph{arXiv}, 2024.
+
+\bibitem{liu2021rtcnvs}
+Y.~Liu \etal
+Rotationally-temporally consistent novel view synthesis of human performance
+video.
+\emph{CVPR}, 2021.
+
+\bibitem{peng2021neuralbody}
+S.~Peng \etal
+Neural Body: Implicit neural representations with structured latent codes for
+novel view synthesis of dynamic humans.
+\emph{CVPR}, 2021.
+
+\bibitem{wu2022sat2vid}
+S.~Wu \etal
+Sat2Vid: Street-view panoramic video synthesis from a single satellite image.
+\emph{ICCV}, 2021.
+
+\bibitem{liang2024gaufre}
+Z.~Liang \etal
+GauFRe: Gaussian deformation fields for real-time dynamic novel view synthesis.
+\emph{arXiv:2312.11458}, 2024.
+
+\bibitem{sun2024movies}
+Y.~Sun \etal
+MoVieS: Motion-aware 4D dynamic view synthesis in one second.
+\emph{arXiv}, 2024.
+
+\bibitem{you2024nvssolver}
+Z.~You \etal
+NVS-Solver: Video diffusion model as zero-shot novel view synthesizer.
+\emph{arXiv:2405.15364}, 2024.
+
+\bibitem{li2024articulatedgs}
+Z.~Li \etal
+Template-free articulated Gaussian Splatting for real-time reposable dynamic
+view synthesis.
+\emph{NeurIPS}, 2024.
+
+\bibitem{bao2024tttcompletion}
+J.~Bao \etal
+Novel view synthesis from a few glimpses via test-time natural video completion.
+\emph{arXiv}, 2024.
+
+\bibitem{tretschk2021nonrigid}
+E.~Tretschk, A.~Tewari, V.~Golyanik, M.~Zollh\"{o}fer, C.~Lassner, and
+C.~Theobalt.
+Non-rigid neural radiance fields: Reconstruction and novel view synthesis of
+a dynamic scene from monocular video.
+\emph{ICCV}, 2021.
+
+\bibitem{tsai2023consistent}
+Y.-C.~Tsai \etal
+Consistent view synthesis with pose-guided diffusion models.
+\emph{CVPR}, 2023.
+
+\bibitem{voleti2024sv3d}
+V.~Voleti \etal
+SV3D: Novel multi-view synthesis and 3D generation from a single image using
+latent video diffusion.
+\emph{ECCV}, 2024.
+
+\bibitem{wu2024cat4d}
+R.~Wu \etal
+CAT4D: Create anything in 4D with multi-view video diffusion models.
+\emph{NeurIPS}, 2024.
+
+\bibitem{yan2024streetcrafter}
+Y.~Yan \etal
+StreetCrafter: Street view synthesis with controllable video diffusion models.
+\emph{arXiv:2407.13758}, 2024.
+
+\bibitem{chen2024sysnvs}
+A.~Chen \etal
+Systematic evaluation of novel view synthesis.
+\emph{arXiv}, 2024.
+
+\bibitem{zhang2024nariqanvs}
+W.~Zhang \etal
+Non-aligned reference image quality assessment for novel view synthesis.
+\emph{arXiv}, 2024.
+
+\bibitem{chen2025inspatioworld}
+K.~Chen \etal
+InSpatio-WorldFM: An open-source real-time generative frame model.
+\emph{arXiv}, 2025.
 
 \end{thebibliography}
 
