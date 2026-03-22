@@ -3,105 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Towards Generative World Modeling: A Comprehensive Survey for Novel View Synthesis</title>
+  <title>ElephantSurvey — Towards Generative World Modeling</title>
   <style>
-    /* ─── Reset & Base ──────────────────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg:          #0f1117;
-      --surface:     #181b24;
-      --surface2:    #1e2130;
-      --border:      #2a2e3f;
-      --accent:      #6c8fff;
-      --accent2:     #a78bfa;
-      --accent3:     #34d399;
-      --text:        #e2e8f0;
-      --text-muted:  #8892a4;
-      --text-dim:    #4a5568;
-      --highlight:   rgba(108,143,255,0.10);
-      --radius:      10px;
-      --font-body:   'Inter', 'Segoe UI', system-ui, sans-serif;
-      --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
+      --bg: #0f1117;
+      --surface: #181b24;
+      --border: #2a2e3f;
+      --accent: #6c8fff;
+      --accent2: #a78bfa;
+      --accent3: #34d399;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --dim: #4a5568;
     }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
-
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: var(--font-body);
-      font-size: 16px;
-      line-height: 1.75;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
       min-height: 100vh;
-    }
-
-    /* ─── Layout ────────────────────────────────────────────────────────────── */
-    .page-wrapper {
       display: flex;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 24px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
     }
 
-    /* ─── Sidebar TOC ───────────────────────────────────────────────────────── */
-    .toc-sidebar {
-      position: sticky;
-      top: 80px;
-      align-self: flex-start;
-      width: 230px;
-      flex-shrink: 0;
-      padding: 20px 0 20px 0;
-      margin-right: 48px;
-      display: none; /* shown at ≥ 900 px */
-    }
-    @media (min-width: 900px) { .toc-sidebar { display: block; } }
-
-    .toc-title {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 12px;
-    }
-
-    .toc-list { list-style: none; }
-    .toc-list li + li { margin-top: 4px; }
-    .toc-list a {
-      display: block;
-      font-size: 13px;
-      color: var(--text-muted);
-      text-decoration: none;
-      padding: 4px 10px;
-      border-left: 2px solid transparent;
-      border-radius: 0 4px 4px 0;
-      transition: all .18s;
-    }
-    .toc-list a:hover,
-    .toc-list a.active {
-      color: var(--accent);
-      border-left-color: var(--accent);
-      background: var(--highlight);
-    }
-    .toc-list .sub { padding-left: 22px; font-size: 12px; }
-
-    /* ─── Main Content ──────────────────────────────────────────────────────── */
-    .main-content {
-      flex: 1;
-      min-width: 0;
-      padding: 60px 0 100px;
-    }
-
-    /* ─── Paper Header ──────────────────────────────────────────────────────── */
-    .paper-header {
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 44px;
+      max-width: 620px;
+      width: 100%;
       text-align: center;
-      margin-bottom: 56px;
-      padding-bottom: 40px;
-      border-bottom: 1px solid var(--border);
     }
 
-    .paper-tag {
+    .emoji { font-size: 40px; margin-bottom: 20px; }
+
+    .tag {
       display: inline-block;
       font-size: 11px;
       font-weight: 700;
@@ -112,845 +53,181 @@
       border: 1px solid rgba(108,143,255,.3);
       padding: 4px 14px;
       border-radius: 999px;
-      margin-bottom: 22px;
-    }
-
-    .paper-title {
-      font-size: clamp(22px, 4vw, 34px);
-      font-weight: 800;
-      line-height: 1.25;
-      letter-spacing: -.02em;
-      color: #fff;
-      margin-bottom: 18px;
-    }
-    .paper-title span { color: var(--accent); }
-
-    .paper-subtitle {
-      font-size: 15px;
-      color: var(--text-muted);
-      max-width: 580px;
-      margin: 0 auto 28px;
-    }
-
-    .authors {
-      font-size: 14px;
-      color: var(--text-muted);
-      margin-bottom: 8px;
-    }
-
-    .meta-badges {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 18px;
-    }
-    .badge {
-      font-size: 12px;
-      padding: 4px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-    }
-    .badge.green { color: var(--accent3); border-color: rgba(52,211,153,.3); background: rgba(52,211,153,.07); }
-    .badge.purple { color: var(--accent2); border-color: rgba(167,139,250,.3); background: rgba(167,139,250,.07); }
-
-    /* ─── Abstract Box ──────────────────────────────────────────────────────── */
-    .abstract-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--accent);
-      border-radius: var(--radius);
-      padding: 24px 28px;
-      margin-bottom: 56px;
-    }
-    .abstract-box .box-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 12px;
-    }
-    .abstract-box p {
-      font-size: 14.5px;
-      color: var(--text-muted);
-      line-height: 1.8;
-    }
-
-    /* ─── Sections ──────────────────────────────────────────────────────────── */
-    .section { margin-bottom: 52px; }
-    .section:last-child { margin-bottom: 0; }
-
-    .section-number {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .14em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 6px;
-    }
-
-    h2.section-heading {
-      font-size: 24px;
-      font-weight: 700;
-      color: #fff;
       margin-bottom: 20px;
-      letter-spacing: -.015em;
     }
 
-    h3.sub-heading {
-      font-size: 17px;
-      font-weight: 600;
-      color: var(--text);
-      margin: 32px 0 12px;
-      padding-left: 14px;
-      border-left: 3px solid var(--accent2);
-    }
-
-    p { margin-bottom: 16px; color: var(--text-muted); font-size: 15px; }
-    p:last-child { margin-bottom: 0; }
-
-    strong { color: var(--text); font-weight: 600; }
-    em { color: var(--accent2); font-style: italic; }
-
-    /* ─── Timeline ──────────────────────────────────────────────────────────── */
-    .timeline {
-      position: relative;
-      margin: 32px 0;
-      padding-left: 0;
-    }
-
-    .timeline::before {
-      content: '';
-      position: absolute;
-      left: 110px;
-      top: 0; bottom: 0;
-      width: 2px;
-      background: linear-gradient(to bottom, var(--accent), var(--accent2), var(--accent3));
-    }
-
-    .tl-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 0;
-      margin-bottom: 0;
-      position: relative;
-    }
-
-    .tl-era {
-      width: 100px;
-      flex-shrink: 0;
-      text-align: right;
-      padding-right: 18px;
-      padding-top: 18px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .06em;
-      color: var(--text-dim);
-    }
-
-    .tl-dot {
-      position: absolute;
-      left: 104px;
-      top: 22px;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      border: 2px solid var(--bg);
-      z-index: 1;
-    }
-
-    .tl-body {
-      flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px 20px;
-      margin-left: 26px;
-      margin-bottom: 12px;
-      transition: border-color .2s;
-    }
-    .tl-body:hover { border-color: var(--accent); }
-
-    .tl-era-label {
-      font-size: 13px;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 6px;
-    }
-
-    .tl-desc { font-size: 13.5px; color: var(--text-muted); margin: 0; }
-    .tl-limit {
-      margin-top: 8px;
-      font-size: 12.5px;
-      color: #f97316;
-      padding: 4px 10px;
-      background: rgba(249,115,22,.08);
-      border: 1px solid rgba(249,115,22,.2);
-      border-radius: 6px;
-      display: inline-block;
-    }
-    .tl-limit::before { content: '⚠ Limitation: '; font-weight: 600; }
-
-    /* ─── Claim Cards ───────────────────────────────────────────────────────── */
-    .claim-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 16px;
-      margin: 24px 0;
-    }
-
-    .claim-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      transition: border-color .2s, transform .2s;
-    }
-    .claim-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-
-    .claim-icon { font-size: 22px; margin-bottom: 10px; }
-    .claim-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 8px; }
-    .claim-body { font-size: 13px; color: var(--text-muted); line-height: 1.65; }
-
-    /* ─── Gap Table ─────────────────────────────────────────────────────────── */
-    .gap-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 24px 0;
-      font-size: 13.5px;
-    }
-    .gap-table th {
-      background: var(--surface2);
-      color: var(--text-muted);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      padding: 10px 16px;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-    }
-    .gap-table td {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      color: var(--text-muted);
-      vertical-align: top;
-    }
-    .gap-table tr:last-child td { border-bottom: none; }
-    .gap-table tr:hover td { background: var(--surface); }
-
-    .dot-yes  { color: var(--accent3); font-weight: 700; }
-    .dot-no   { color: #f87171; font-weight: 700; }
-    .dot-part { color: #fbbf24; font-weight: 700; }
-
-    /* ─── Contribution List ─────────────────────────────────────────────────── */
-    .contrib-list { list-style: none; margin: 16px 0; }
-    .contrib-list li {
-      display: flex;
-      gap: 12px;
-      padding: 12px 16px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      margin-bottom: 10px;
-      font-size: 14px;
-      color: var(--text-muted);
-      transition: border-color .2s;
-    }
-    .contrib-list li:hover { border-color: var(--accent); }
-    .contrib-num {
-      font-size: 12px;
+    h1 {
+      font-size: clamp(18px, 4vw, 26px);
       font-weight: 800;
-      color: var(--accent);
-      background: rgba(108,143,255,.12);
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      flex-shrink: 0;
+      line-height: 1.3;
+      color: #fff;
+      margin-bottom: 10px;
+      letter-spacing: -.02em;
+    }
+    h1 span { color: var(--accent); }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 36px;
+      line-height: 1.7;
+    }
+
+    /* ── PDF Button ── */
+    .btn-pdf {
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-top: 1px;
-    }
-
-    /* ─── Callout Box ───────────────────────────────────────────────────────── */
-    .callout {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--accent3);
-      border-radius: var(--radius);
-      padding: 18px 22px;
-      margin: 24px 0;
-      font-size: 14px;
-      color: var(--text-muted);
-      line-height: 1.75;
-    }
-    .callout strong { color: var(--accent3); }
-
-    /* ─── Definition Box ────────────────────────────────────────────────────── */
-    .definition-box {
-      background: linear-gradient(135deg, rgba(108,143,255,.06), rgba(167,139,250,.06));
-      border: 1px solid rgba(108,143,255,.25);
-      border-radius: var(--radius);
-      padding: 20px 24px;
-      margin: 24px 0;
-      position: relative;
-    }
-    .definition-box .def-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 10px;
-    }
-    .definition-box p {
-      font-size: 14.5px;
-      color: var(--text);
-      margin: 0;
-      line-height: 1.75;
-    }
-
-    /* ─── Paper Structure ───────────────────────────────────────────────────── */
-    .paper-structure {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 12px;
-      margin: 20px 0;
-    }
-    .struct-item {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-    }
-    .struct-sec {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--accent);
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-    .struct-title {
-      font-size: 13px;
-      font-weight: 600;
+      gap: 10px;
+      background: var(--accent);
       color: #fff;
-      margin-bottom: 5px;
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 14px 28px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      transition: background .18s, transform .18s;
     }
-    .struct-desc { font-size: 12px; color: var(--text-muted); }
+    .btn-pdf:hover { background: #7fa0ff; transform: translateY(-2px); }
+    .btn-pdf svg { flex-shrink: 0; }
 
-    /* ─── Footer ────────────────────────────────────────────────────────────── */
-    .page-footer {
-      text-align: center;
-      padding: 32px 0 24px;
-      border-top: 1px solid var(--border);
+    .btn-gh {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 36px;
+      transition: border-color .18s, color .18s;
+    }
+    .btn-gh:hover { border-color: var(--accent); color: var(--text); }
+
+    /* ── Version badge row ── */
+    .versions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+    .ver-badge {
       font-size: 12px;
-      color: var(--text-dim);
-      margin-top: 60px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      text-decoration: none;
+      transition: border-color .18s, color .18s;
     }
-    .page-footer a { color: var(--text-muted); text-decoration: none; }
-    .page-footer a:hover { color: var(--accent); }
+    .ver-badge.active {
+      border-color: var(--accent3);
+      color: var(--accent3);
+      background: rgba(52,211,153,.08);
+    }
+    .ver-badge:not(.active):hover { border-color: var(--accent); color: var(--text); }
 
-    /* ─── Scrollbar ─────────────────────────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg); }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+    /* ── Stats row ── */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      padding-top: 28px;
+      border-top: 1px solid var(--border);
+    }
+    .stat-item { text-align: center; }
+    .stat-num {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-top: 3px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 28px;
+      font-size: 12px;
+      color: var(--dim);
+      text-align: center;
+    }
   </style>
 </head>
 <body>
 
-<!-- ═══════════════════════ TOP NAV ═══════════════════════════════════════════ -->
-<header style="position:sticky;top:0;z-index:100;background:rgba(15,17,23,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;">
-  <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:52px;">
-    <span style="font-size:13px;font-weight:700;color:var(--accent);">🐘 ElephantSurvey</span>
-    <span style="font-size:12px;color:var(--text-dim);">Draft · Section 1: Introduction</span>
-  </div>
-</header>
+<div class="card">
+  <div class="emoji">🐘</div>
+  <div class="tag">Survey Paper · NeurIPS 2026 Format</div>
 
-<!-- ═══════════════════════ MAIN ═══════════════════════════════════════════ -->
-<div class="page-wrapper">
-
-  <!-- Sidebar TOC -->
-  <nav class="toc-sidebar">
-    <div class="toc-title">Contents</div>
-    <ul class="toc-list">
-      <li><a href="#abstract">Abstract</a></li>
-      <li><a href="#s1">1 · Introduction</a></li>
-      <li><a href="#s1-1" class="sub">1.1 Background</a></li>
-      <li><a href="#s1-2" class="sub">1.2 World Model Definition</a></li>
-      <li><a href="#s1-3" class="sub">1.3 The Role of NVS</a></li>
-      <li><a href="#s1-4" class="sub">1.4 Evolution Arc</a></li>
-      <li><a href="#s1-5" class="sub">1.5 The Gap</a></li>
-      <li><a href="#s1-6" class="sub">1.6 Contributions</a></li>
-      <li><a href="#s1-7" class="sub">1.7 Paper Structure</a></li>
-    </ul>
-  </nav>
-
-  <!-- Main Content -->
-  <main class="main-content">
-
-    <!-- Paper Header -->
-    <div class="paper-header">
-      <div class="paper-tag">Survey Paper · Draft</div>
-      <h1 class="paper-title">
-        Towards <span>Generative World Modeling</span>:<br/>
-        A Comprehensive Survey for Novel View Synthesis
-      </h1>
-      <p class="paper-subtitle">
-        Tracing the evolution of scene representation — from geometric reconstruction
-        to generative world models — and positioning Novel View Synthesis as the
-        foundational spatial capability.
-      </p>
-      <div class="authors">ElephantFlow Research</div>
-      <div class="meta-badges">
-        <span class="badge">cs.CV</span>
-        <span class="badge">cs.LG</span>
-        <span class="badge green">NeRF · 3DGS · Diffusion</span>
-        <span class="badge purple">World Models · 4D · Embodied AI</span>
-      </div>
-    </div>
-
-    <!-- Abstract -->
-    <div id="abstract" class="abstract-box">
-      <div class="box-label">Abstract</div>
-      <p>
-        Novel View Synthesis (NVS) — the task of rendering a scene from arbitrary unseen viewpoints given
-        a set of reference observations — has undergone a paradigm shift from classical geometry-based
-        reconstruction toward learning-driven generative approaches. This survey examines NVS not merely
-        as a rendering technique, but as the <strong>foundational spatial capability</strong> of Generative World Models:
-        systems that can predict visual scene states under arbitrary conditions, including viewpoint changes,
-        temporal dynamics, and agent interactions. We provide a comprehensive review spanning three
-        dominant paradigms — implicit neural representations (NeRF), explicit Gaussian-based representations
-        (3DGS), and generative model-driven synthesis (diffusion and score distillation methods) — and
-        analyze how each advances, or falls short of, the full demands of world modeling. We further
-        survey emerging 4D approaches that unify spatial and temporal prediction, and identify
-        key open challenges including physical consistency, scalable generalization, and geometry-generation
-        trade-offs. Our analysis reveals that the field is at a critical inflection point where NVS and
-        World Modeling are converging, and lays out a research roadmap toward truly generalizable,
-        physically grounded world models.
-      </p>
-    </div>
-
-    <!-- ══════════ SECTION 1 ══════════ -->
-    <section id="s1" class="section">
-      <div class="section-number">Section 1</div>
-      <h2 class="section-heading">Introduction</h2>
-
-      <!-- 1.1 -->
-      <h3 id="s1-1" class="sub-heading">1.1 &nbsp;The Fundamental Challenge</h3>
-
-      <p>
-        Intelligence, whether biological or artificial, requires the ability to reason about the world
-        beyond what is immediately visible. A surgeon planning an incision must mentally rotate a 3D
-        anatomy from a 2D scan. A self-driving vehicle must anticipate occlusion from a new perspective
-        before rounding a corner. A robot must predict how a grasped object will look from the wrist
-        camera before it reaches the target pose. In each case, the core cognitive operation is the same:
-        <strong>synthesizing a plausible visual state of the world at an unobserved vantage point</strong>.
-      </p>
-
-      <p>
-        This is the problem of <strong>Novel View Synthesis (NVS)</strong>. Formally, given a set of reference
-        images <em>{ I<sub>1</sub>, …, I<sub>n</sub> }</em> captured from known camera poses
-        <em>{ π<sub>1</sub>, …, π<sub>n</sub> }</em>, the goal is to render a photorealistic image
-        <em>Î</em> at an arbitrary target pose <em>π*</em>, faithfully preserving scene geometry,
-        appearance, and lighting.
-      </p>
-
-      <p>
-        While the problem was articulated decades ago in the image-based rendering literature
-        <em>(Levoy &amp; Hanrahan, 1996; McMillan &amp; Bishop, 1995)</em>, the past five years have witnessed
-        an extraordinary leap in capability, driven by deep learning, differentiable rendering, and
-        generative modeling. Yet despite remarkable progress, a critical question remains underexplored
-        in existing literature: <em>in what sense does a system that can synthesize novel views
-        "understand" the world?</em> And conversely — <em>what must NVS methods ultimately become
-        in order to serve as the spatial backbone of a true World Model?</em>
-      </p>
-
-      <p>
-        This survey is organized around these questions. We treat NVS not as an isolated rendering
-        task, but as the <strong>spatial prediction axis of a larger problem: Generative World Modeling</strong>.
-      </p>
-
-      <!-- 1.2 -->
-      <h3 id="s1-2" class="sub-heading">1.2 &nbsp;What Is a World Model?</h3>
-
-      <div class="definition-box">
-        <div class="def-label">Working Definition</div>
-        <p>
-          A <strong>World Model</strong> is a learned system that can predict the visual (and optionally physical)
-          state of a scene under arbitrary conditions — including viewpoint changes, temporal evolution,
-          and agent-driven interactions — in a manner that is <em>geometrically consistent</em>,
-          <em>physically plausible</em>, and <em>generalizable</em> beyond the training distribution.
-        </p>
-      </div>
-
-      <p>
-        This definition deliberately extends the classic control-theoretic formulation
-        <em>(Ha &amp; Schmidhuber, 2018; LeCun, 2022)</em>, where a world model predicts the next latent
-        state given an action. We expand the "condition" axis to include camera pose as a first-class
-        citizen, making NVS a natural special case: when the condition is a viewpoint change and the
-        scene is static, the world model reduces exactly to an NVS system.
-      </p>
-
-      <p>
-        Conversely, a world model must go beyond NVS in two critical dimensions:
-      </p>
-
-      <div class="claim-grid">
-        <div class="claim-card">
-          <div class="claim-icon">⏱</div>
-          <div class="claim-title">Temporal Prediction</div>
-          <div class="claim-body">
-            A world model must handle dynamic scenes — predicting how the scene evolves over time
-            under physics, agent actions, or autonomous dynamics. Static NVS methods cannot
-            address this axis.
-          </div>
-        </div>
-        <div class="claim-card">
-          <div class="claim-icon">🎮</div>
-          <div class="claim-title">Action Conditioning</div>
-          <div class="claim-body">
-            A world model must be <em>controllable</em>: given an agent action (move forward, grasp, rotate),
-            it must render the resulting observation. This requires semantic and physical understanding
-            beyond geometric interpolation.
-          </div>
-        </div>
-        <div class="claim-card">
-          <div class="claim-icon">🌐</div>
-          <div class="claim-title">Cross-scene Generalization</div>
-          <div class="claim-body">
-            Per-scene optimization (NeRF, 3DGS) produces scene-specific models. A world model
-            must generalize to unseen environments from as few as a single image or even a
-            text description.
-          </div>
-        </div>
-      </div>
-
-      <!-- 1.3 -->
-      <h3 id="s1-3" class="sub-heading">1.3 &nbsp;Why NVS Is the Core of World Modeling</h3>
-
-      <p>
-        Among all the capabilities that a world model requires, <strong>spatial consistency</strong> is the
-        foundational constraint. A temporal prediction that is geometrically inconsistent — where a
-        coffee mug occupies two different positions when viewed from two angles — is not a world model;
-        it is a hallucination. NVS is precisely the discipline that enforces multi-view geometric
-        consistency, making it a non-negotiable prerequisite for any credible world model.
-      </p>
-
-      <div class="callout">
-        <strong>Central Thesis:</strong> NVS is the spatial inference engine of world modeling.
-        Without it, a "world model" reduces to a video generator — capable of producing plausible-looking
-        sequences but unable to support downstream tasks that require spatial grounding, such as
-        robot manipulation, surgical planning, or autonomous navigation.
-      </div>
-
-      <p>
-        This relationship has important implications for research agenda. Advances in NVS — from
-        denser input constraints to sparse-view generalization, from static scenes to dynamic 4D
-        modeling — map directly onto advances in world modeling capability. We use this lens
-        throughout the survey to evaluate the significance of each method: not merely by its
-        PSNR on standard benchmarks, but by its contribution toward the world modeling
-        desiderata outlined in Section 2.
-      </p>
-
-      <!-- 1.4 -->
-      <h3 id="s1-4" class="sub-heading">1.4 &nbsp;The Evolution Arc: From Reconstruction to Generation</h3>
-
-      <p>
-        The history of NVS can be understood as a progressive relaxation of input constraints,
-        each step demanding stronger scene priors and thus moving closer to generative world modeling:
-      </p>
-
-      <div class="timeline">
-
-        <div class="tl-item">
-          <div class="tl-era">2015–2020</div>
-          <div class="tl-dot" style="background:#6c8fff;"></div>
-          <div class="tl-body">
-            <div class="tl-era-label">Era I · Classical Reconstruction</div>
-            <p class="tl-desc">
-              Structure-from-Motion (SfM), multi-view stereo, and light field methods dominated.
-              Given dense, well-posed observations, these methods could faithfully reconstruct scene
-              geometry and synthesize novel views via image-based rendering. High-quality outputs
-              were achievable, but only under tightly controlled conditions.
-            </p>
-            <div class="tl-limit">Dense input required; no learning-based prior; brittle to occlusion and reflectance.</div>
-          </div>
-        </div>
-
-        <div class="tl-item">
-          <div class="tl-era">2020–2023</div>
-          <div class="tl-dot" style="background:#a78bfa;"></div>
-          <div class="tl-body">
-            <div class="tl-era-label">Era II · Neural Radiance Fields (NeRF)</div>
-            <p class="tl-desc">
-              Mildenhall et al. (2020) introduced NeRF: a continuous implicit scene representation
-              encoded in an MLP, trained via differentiable volume rendering. The community rapidly
-              extended NeRF to handle unbounded scenes, dynamic deformations, and — critically —
-              cross-scene generalization (pixelNeRF, IBRNet, MVSNeRF). Quality surpassed
-              classical methods by large margins.
-            </p>
-            <div class="tl-limit">Per-scene optimization is slow (hours to days); dynamic scenes remain challenging; no generative prior.</div>
-          </div>
-        </div>
-
-        <div class="tl-item">
-          <div class="tl-era">2023–now</div>
-          <div class="tl-dot" style="background:#34d399;"></div>
-          <div class="tl-body">
-            <div class="tl-era-label">Era III · 3D Gaussian Splatting (3DGS)</div>
-            <p class="tl-desc">
-              Kerbl et al. (2023) replaced the implicit MLP with a collection of explicit anisotropic
-              Gaussian primitives, rendered via differentiable rasterization. Real-time rendering
-              at high fidelity became possible, unlocking interactive applications. The community
-              extended 3DGS to dynamic scenes (4DGS, SpacetimeGaussians) and generalizable
-              feed-forward models (pixelSplat, MVSplat, Splatt3R).
-            </p>
-            <div class="tl-limit">Still reconstruction-centric; generative prior is weak; large-scale open scenes remain difficult.</div>
-          </div>
-        </div>
-
-        <div class="tl-item">
-          <div class="tl-era">2022–now</div>
-          <div class="tl-dot" style="background:#f97316;"></div>
-          <div class="tl-body">
-            <div class="tl-era-label">Era IV · Generative Model-Driven NVS</div>
-            <p class="tl-desc">
-              Diffusion models and score distillation methods (DreamFusion, Zero-1-to-3, Cat3D,
-              ReconFusion) introduced powerful visual priors that enable novel view synthesis from
-              single images or text prompts. GAN-based 3D-aware generation (EG3D, pi-GAN) had
-              earlier established this direction. Video diffusion models (Cosmos, Genie 2, ViewCrafter)
-              further unified temporal and viewpoint prediction, arriving at nascent 4D World Models.
-            </p>
-            <div class="tl-limit">Geometry–generation trade-off unresolved; physical consistency not guaranteed; long-horizon coherence lacking.</div>
-          </div>
-        </div>
-
-      </div>
-
-      <p>
-        Each era is not superseded by the next — they coexist, addressing different points on the
-        trade-off frontier between reconstruction fidelity, input efficiency, generalization, and
-        computational cost. The current frontier lies in <strong>integrating the geometric precision
-        of NeRF/3DGS with the generative priors of diffusion models</strong>, while extending both
-        along the temporal axis. This integration is the path towards Generative World Modeling.
-      </p>
-
-      <!-- 1.5 -->
-      <h3 id="s1-5" class="sub-heading">1.5 &nbsp;What Existing NVS Methods Cannot Yet Do</h3>
-
-      <p>
-        Despite remarkable progress, a systematic gap exists between the current state of NVS and
-        the requirements of a full World Model. We identify four critical dimensions:
-      </p>
-
-      <table class="gap-table">
-        <thead>
-          <tr>
-            <th>Capability</th>
-            <th>Classical</th>
-            <th>NeRF</th>
-            <th>3DGS</th>
-            <th>Generative NVS</th>
-            <th>4D World Model (target)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Geometric consistency (multi-view)</td>
-            <td class="dot-yes">✓</td>
-            <td class="dot-yes">✓</td>
-            <td class="dot-yes">✓</td>
-            <td class="dot-part">△</td>
-            <td class="dot-yes">✓</td>
-          </tr>
-          <tr>
-            <td>Sparse / single-image input</td>
-            <td class="dot-no">✗</td>
-            <td class="dot-part">△</td>
-            <td class="dot-part">△</td>
-            <td class="dot-yes">✓</td>
-            <td class="dot-yes">✓</td>
-          </tr>
-          <tr>
-            <td>Dynamic scene modeling (4D)</td>
-            <td class="dot-no">✗</td>
-            <td class="dot-part">△</td>
-            <td class="dot-part">△</td>
-            <td class="dot-part">△</td>
-            <td class="dot-yes">✓</td>
-          </tr>
-          <tr>
-            <td>Action / agent controllability</td>
-            <td class="dot-no">✗</td>
-            <td class="dot-no">✗</td>
-            <td class="dot-no">✗</td>
-            <td class="dot-part">△</td>
-            <td class="dot-yes">✓</td>
-          </tr>
-          <tr>
-            <td>Physical plausibility</td>
-            <td class="dot-no">✗</td>
-            <td class="dot-no">✗</td>
-            <td class="dot-no">✗</td>
-            <td class="dot-part">△</td>
-            <td class="dot-yes">✓</td>
-          </tr>
-          <tr>
-            <td>Cross-scene generalization</td>
-            <td class="dot-no">✗</td>
-            <td class="dot-part">△</td>
-            <td class="dot-part">△</td>
-            <td class="dot-yes">✓</td>
-            <td class="dot-yes">✓</td>
-          </tr>
-          <tr>
-            <td>Real-time rendering</td>
-            <td class="dot-part">△</td>
-            <td class="dot-no">✗</td>
-            <td class="dot-yes">✓</td>
-            <td class="dot-no">✗</td>
-            <td class="dot-yes">✓</td>
-          </tr>
-        </tbody>
-      </table>
-      <p style="font-size:12px;color:var(--text-dim);margin-top:-8px;">
-        ✓ = generally achieved &nbsp; △ = partially achieved or method-dependent &nbsp; ✗ = not addressed
-      </p>
-
-      <p>
-        The table reveals a fundamental insight: <strong>no single existing paradigm satisfies all
-        the requirements of a world model simultaneously</strong>. Reconstruction-based methods
-        (NeRF, 3DGS) excel at geometric consistency but lack generative priors and action
-        controllability. Generative methods (diffusion-based NVS) provide strong priors but
-        sacrifice geometric rigor. The path to world modeling necessarily involves
-        <em>bridging these paradigms</em> — and this survey traces that bridge.
-      </p>
-
-      <!-- 1.6 -->
-      <h3 id="s1-6" class="sub-heading">1.6 &nbsp;Contributions of This Survey</h3>
-
-      <ul class="contrib-list">
-        <li>
-          <span class="contrib-num">1</span>
-          <span>
-            <strong>A World Modeling Lens for NVS.</strong>
-            We introduce a unified analytical framework that evaluates NVS methods not only on
-            standard metrics (PSNR, SSIM, LPIPS) but on their contribution toward the five
-            world modeling desiderata: geometric consistency, generalization, dynamic modeling,
-            physical plausibility, and action controllability.
-          </span>
-        </li>
-        <li>
-          <span class="contrib-num">2</span>
-          <span>
-            <strong>Comprehensive Taxonomy Across Three Paradigms.</strong>
-            We systematically survey &gt;150 methods spanning classical reconstruction, NeRF variants,
-            3DGS variants, and generative NVS approaches, with structured analysis of each
-            method's representation, input regime, rendering mechanism, and world modeling implications.
-          </span>
-        </li>
-        <li>
-          <span class="contrib-num">3</span>
-          <span>
-            <strong>The 4D Convergence Thesis.</strong>
-            We articulate and substantiate the claim that the field is converging toward 4D
-            World Modeling — the unification of spatial (NVS) and temporal (video prediction)
-            generation — and trace the concrete technical developments driving this convergence.
-          </span>
-        </li>
-        <li>
-          <span class="contrib-num">4</span>
-          <span>
-            <strong>Open Problems and Research Roadmap.</strong>
-            We identify and analyze the unresolved challenges — geometry–generation trade-off,
-            long-horizon temporal consistency, physical grounding, and evaluation methodology —
-            and propose a research roadmap toward generalizable, physically grounded world models.
-          </span>
-        </li>
-      </ul>
-
-      <!-- 1.7 -->
-      <h3 id="s1-7" class="sub-heading">1.7 &nbsp;Paper Structure</h3>
-
-      <p>The remainder of the survey is organized as follows:</p>
-
-      <div class="paper-structure">
-        <div class="struct-item">
-          <div class="struct-sec">§ 2</div>
-          <div class="struct-title">Background & Formulation</div>
-          <div class="struct-desc">Camera models, volume rendering, differentiable rasterization, and unified problem formulation.</div>
-        </div>
-        <div class="struct-item">
-          <div class="struct-sec">§ 3</div>
-          <div class="struct-title">Implicit Representations (NeRF)</div>
-          <div class="struct-desc">NeRF and variants: acceleration, dynamic scenes, sparse-view generalization.</div>
-        </div>
-        <div class="struct-item">
-          <div class="struct-sec">§ 4</div>
-          <div class="struct-title">Explicit Representations (3DGS)</div>
-          <div class="struct-desc">3DGS and variants: static, dynamic 4DGS, feed-forward generalizable Gaussians.</div>
-        </div>
-        <div class="struct-item">
-          <div class="struct-sec">§ 5</div>
-          <div class="struct-title">Generative Approaches</div>
-          <div class="struct-desc">3D-aware GANs, diffusion-based NVS, score distillation, video diffusion for 4D synthesis.</div>
-        </div>
-        <div class="struct-item">
-          <div class="struct-sec">§ 6</div>
-          <div class="struct-title">Towards World Modeling</div>
-          <div class="struct-desc">4D modeling, action conditioning, embodied/driving applications, Genie & Cosmos.</div>
-        </div>
-        <div class="struct-item">
-          <div class="struct-sec">§ 7</div>
-          <div class="struct-title">Datasets & Benchmarks</div>
-          <div class="struct-desc">Static, dynamic, large-scale; evaluation protocols and metric limitations.</div>
-        </div>
-        <div class="struct-item">
-          <div class="struct-sec">§ 8</div>
-          <div class="struct-title">Open Problems</div>
-          <div class="struct-desc">Key unsolved challenges and a proposed research roadmap.</div>
-        </div>
-        <div class="struct-item">
-          <div class="struct-sec">§ 9</div>
-          <div class="struct-title">Conclusion</div>
-          <div class="struct-desc">Summary, the 4D convergence thesis, and future outlook.</div>
-        </div>
-      </div>
-
-    </section>
-    <!-- ══════════ END SECTION 1 ══════════ -->
-
-  </main>
-</div>
-
-<!-- Footer -->
-<div class="page-footer">
-  <p>ElephantFlow Research · 🐘 ElephantSurvey &nbsp;·&nbsp; Draft — Section 1: Introduction</p>
-  <p style="margin-top:6px;">
-    <a href="https://github.com/elephantflow/ElephantSurvey">GitHub</a>
+  <h1>
+    Towards <span>Generative World Modeling</span>:<br/>
+    A Survey for Novel View Synthesis
+  </h1>
+  <p class="subtitle">
+    From NeRF to 3DGS to Diffusion — tracing the evolution of scene representation
+    and positioning NVS as the spatial backbone of world models.
   </p>
+
+  <!-- Primary CTA -->
+  <a class="btn-pdf" href="survey-v0.1.pdf" target="_blank">
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+    </svg>
+    Read PDF (v0.1 · 12 pages)
+  </a>
+
+  <!-- GitHub -->
+  <a class="btn-gh" href="https://github.com/elephantflow/ElephantSurvey" target="_blank">
+    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.38 7.86 10.9.57.1.78-.25.78-.55v-1.92c-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.27-1.68-1.27-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.75 2.68 1.24 3.33.95.1-.74.4-1.24.72-1.53-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.95 10.95 0 015.74 0C17.04 5.6 18 5.91 18 5.91c.62 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.38-5.25 5.67.41.35.78 1.05.78 2.12v3.14c0 .3.2.66.79.55C20.22 21.37 23.5 17.07 23.5 12 23.5 5.73 18.27.5 12 .5z"/>
+    </svg>
+    elephantflow/ElephantSurvey
+  </a>
+
+  <!-- Version selector -->
+  <div class="versions">
+    <a class="ver-badge active" href="survey-v0.1.pdf" target="_blank">v0.1 · current</a>
+    <span class="ver-badge" style="cursor:default; opacity:.4;">v0.2 · coming</span>
+    <span class="ver-badge" style="cursor:default; opacity:.4;">v1.0 · submission</span>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-item">
+      <div class="stat-num">9</div>
+      <div class="stat-label">Sections</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">12</div>
+      <div class="stat-label">Pages</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">50+</div>
+      <div class="stat-label">References</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">150+</div>
+      <div class="stat-label">Methods</div>
+    </div>
+  </div>
 </div>
 
-<!-- Sidebar active link script -->
-<script>
-  const links = document.querySelectorAll('.toc-list a');
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        links.forEach(l => l.classList.remove('active'));
-        const match = document.querySelector(`.toc-list a[href="#${e.target.id}"]`);
-        if (match) match.classList.add('active');
-      }
-    });
-  }, { rootMargin: '-20% 0px -70% 0px' });
-
-  document.querySelectorAll('[id]').forEach(el => observer.observe(el));
-</script>
+<div class="footer">
+  ElephantFlow Research · March 2026 · NeurIPS 2026 Format
+</div>
 
 </body>
 </html>
