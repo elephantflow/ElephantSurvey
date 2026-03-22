@@ -81,10 +81,10 @@ interactive world generation---across three axes:
 (ii)~generative paradigm (per-scene optimisation, feed-forward inference,
 diffusion-based synthesis),
 and (iii)~world-modelling capability (geometry, dynamics, controllability).
-We survey more than \textbf{160 representative methods} spanning NeRF,
+We survey more than \textbf{180 representative methods} spanning NeRF,
 3D Gaussian Splatting, generalizable reconstruction, diffusion-based NVS,
-and 4-D world modeling, identify the key open challenges, and propose a
-roadmap toward physically grounded, generalisable world models.
+and 4-D world modeling, and propose a roadmap toward physically grounded,
+generalisable world models.
 \end{abstract}
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -268,24 +268,24 @@ We organise all methods along a \emph{continuous spectrum} defined by three axes
 \subsection{Contributions and Paper Structure}
 
 \textbf{Contributions:}
-(1)~Unified continuous-spectrum taxonomy with three axes;
-(2)~Cross-paradigm coverage of $>$160 methods (NeRF, 3DGS, generative,
-4-D world modeling);
-(3)~Explicit related-survey gap analysis (Table~\ref{tab:surveys});
-(4)~Open-problems roadmap with five concrete research directions.
+(1)~A unified continuous-spectrum taxonomy across three axes (input regime,
+temporal scope, controllability);
+(2)~Cross-paradigm coverage of $>$180 methods with explicit World Modeling
+implications in each chapter;
+(3)~A related-survey gap analysis (Table~\ref{tab:surveys}) substantiating
+the novelty of the World Modeling lens;
+(4)~A five-direction open-problems roadmap.
 
-\textbf{Structure:}
-\S\ref{sec:background}~Background;
-\S\ref{sec:representation}~Scene Representations;
-\S\ref{sec:nerf}~NeRF Methods;
-\S\ref{sec:3dgs}~3DGS Methods;
-\S\ref{sec:generalisable}~Generalisable Feed-Forward Reconstruction;
-\S\ref{sec:generative}~Generative NVS;
-\S\ref{sec:world}~Towards World Modeling;
-\S\ref{sec:datasets}~Datasets;
-\S\ref{sec:eval}~Evaluation;
-\S\ref{sec:open}~Open Problems;
-\S\ref{sec:conclusion}~Conclusion.
+The remainder is organised as follows.
+\S\ref{sec:background} establishes background and a unified formulation.
+\S\ref{sec:nerf}--\ref{sec:generalisable} survey the three representation
+paradigms (NeRF, 3DGS, feed-forward reconstruction).
+\S\ref{sec:generative} covers generative \nvs{} with particular depth on
+camera-controlled diffusion.
+\S\ref{sec:world} examines 4-D generation, neural driving simulators, and
+world foundation models.
+\S\ref{sec:datasets}--\ref{sec:eval} review datasets and evaluation protocols.
+\S\ref{sec:open} proposes a research roadmap.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Background and Unified Formulation}
@@ -382,15 +382,18 @@ We formulate \nvs{} as a general function:
   \quad n\in[1,+\infty).
   \label{eq:nvs}
 \end{equation}
-The world-modeling extension adds time $t$ and action $\mathbf{a}$:
+The world-modeling extension augments this with a time index $t$ and a
+sequence of agent actions $\mathbf{a}_{0:t}$:
 \begin{equation}
   \mathcal{M}_\theta:\bigl(\{\mathbf{I}_i,\boldsymbol{\pi}_i\}_{i=1}^n,\;
   \mathbf{a}_{0:t},\,t,\,\boldsymbol{\pi}^*\bigr)\longrightarrow\hat{\mathbf{I}}^*_t.
   \label{eq:wm}
 \end{equation}
-This defines five desiderata:
-\textbf{D1}~geometric consistency;
-\textbf{D2}~sparse/single-image generalisation;
+Eq.~\eqref{eq:nvs} is the special case $t=0$, $\mathbf{a}=\varnothing$.
+A complete world model satisfying Eq.~\eqref{eq:wm} must fulfil five desiderata,
+which we use throughout the survey:
+\textbf{D1}~geometric consistency across viewpoints;
+\textbf{D2}~generalisation from sparse or single-image input;
 \textbf{D3}~dynamic scene modelling;
 \textbf{D4}~action conditioning;
 \textbf{D5}~physical plausibility.
@@ -399,27 +402,42 @@ This defines five desiderata:
 \section{Scene Representation Taxonomy}
 \label{sec:representation}
 
-\nvs{} methods can be classified by how they represent scene content:
+The choice of scene representation determines the fundamental trade-offs a
+method faces: rendering speed, reconstruction accuracy, memory footprint,
+generalisability, and editability.
+We identify four families, each reflecting a different position on the
+speed--compactness--quality Pareto frontier.
 
-\textbf{Implicit representations} encode scenes as continuous functions
-(\eg, MLP, hash-grid).
-Advantages: compact, resolution-independent, continuous.
-Disadvantages: slow rendering, per-scene optimisation.
+\textbf{Implicit representations} (MLPs, hash grids) encode the scene as a
+continuous function $f_\theta(\mathbf{x})$.
+Their key advantages are compactness and continuous differentiability, which
+support high-quality reconstruction from dense observations.
+Their central limitation is rendering speed: each pixel requires integrating
+along a ray through many network evaluations.
+NeRF~\citep{mildenhall2020nerf} and its successors (§\ref{sec:nerf}) are the
+canonical family.
 
-\textbf{Explicit representations} store scene content at discrete elements
-(\eg, voxels, point clouds, Gaussians).
-Advantages: fast rendering, easy editing.
-Disadvantages: memory-intensive, discrete resolution limits.
+\textbf{Explicit representations} (voxels, point clouds, Gaussians) store scene
+attributes at discrete spatial elements, enabling tile-based or splat-based
+rasterisation that achieves real-time frame rates.
+The trade-off is memory: a faithful 3DGS scene may occupy hundreds of megabytes.
+3D Gaussian Splatting~\citep{kerbl2023gaussian} (§\ref{sec:3dgs}) is the
+dominant current representative.
 
-\textbf{Hybrid representations} combine implicit and explicit components
-(\eg, triplane + MLP, Gaussian + neural field).
-Advantages: balance speed and quality.
-Disadvantages: complex training pipelines.
+\textbf{Hybrid representations} combine an explicit spatial structure---typically
+a triplane~\citep{chan2022efficient} or multi-resolution
+grid~\citep{muller2022instant}---with a shallow MLP decoder.
+They strike a practical balance between the quality of implicit models and
+the speed of explicit ones, and are the backbone of most large reconstruction
+models (§\ref{sec:generalisable}).
 
-\textbf{Structured/compositional representations} decompose scenes into
-semantic entities (\eg, objects, backgrounds, agents).
-Advantages: scene editing, compositional generation.
-Disadvantages: require segmentation or part annotation.
+\textbf{Compositional representations} decompose the scene into semantic
+entities (objects, backgrounds, agents) with independent sub-representations.
+This structural inductive bias enables object-level editing and compositional
+generation~\citep{niemeyer2021giraffe,zhou2024gala3d}, but typically requires
+supervision or segmentation to separate entities.
+It is also the natural representation for world models that must reason about
+independently acting objects.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{NeRF: Implicit Neural Radiance Fields}
@@ -521,9 +539,14 @@ IBRNet~\citep{wang2021ibrnet} uses a transformer to aggregate features from
 multiple reference views at query points along the ray.
 MVSNeRF~\citep{chen2021mvsnerf} builds a cost volume from stereo for
 geometry-aware feature extraction.
-GNT~\citep{wang2022gnt} is a fully attention-based generalizable NeRF.
-SRT~\citep{sajjadi2022srt} uses a set-latent scene representation
-encoded from arbitrary views.
+GNT~\citep{wang2022gnt} dispenses with the NeRF MLP entirely, replacing it
+with a two-stage transformer that first encodes reference views into a
+view-independent representation and then renders the target view via
+cross-attention, learning geometric reasoning as an emergent property of
+attention rather than an explicit inductive bias.
+SRT~\citep{sajjadi2022srt} pursues a similar philosophy but uses a
+set-latent architecture, encoding an arbitrary number of views into a
+fixed-size scene representation without pose assumptions.
 NerfDiff~\citep{gu2023nerfdiff} augments generalizable NeRF with diffusion
 priors for single-image synthesis.
 ZeroRF~\citep{shi2023zerorf} achieves sparse-view 360$^\circ$ reconstruction
@@ -556,8 +579,12 @@ DyNeRF~\citep{li2022neural3d} extends NeRF to monocular video via a
 time-conditioned model.
 TiNeuVox~\citep{fang2022tineuvox} uses voxel features to accelerate dynamic NeRF.
 K-Planes~\citep{fridovich2023kplanes} decomposes 4-D space-time into six
-feature planes (three spatial, three spatial-temporal).
-HexPlane~\citep{cao2023hexplane} is a concurrent work with the same idea.
+feature planes---three spatial (XY, XZ, YZ) and three spatial-temporal
+(XT, YT, ZT)---each encoded as a learned 2-D grid, making the architecture
+highly memory-efficient and interpretable.
+HexPlane~\citep{cao2023hexplane} independently proposes the same factorisation,
+demonstrating its generality; together these works establish plane-based
+4-D decomposition as the dominant acceleration paradigm for dynamic NeRF.
 NeRFPlayer~\citep{song2023nerfplayer} separately encodes static, deforming and
 newly appearing regions.
 Soup-of-Planes~\citep{du2023soupofplanes} enables fast view synthesis of
@@ -1098,8 +1125,7 @@ Table~\ref{tab:generative_methods} provides a structured comparison of generativ
     ZeroNVS~\citep{sargent2023zeronvs}          & CVPR'24    & LDM        & Pose+int.& \pt & -- & In-the-wild \\
     ReconFusion~\citep{wu2024reconfusion}       & CVPR'24    & LDM        & pixelNeRF& \yes& NeRF & Diff reg. \\
     Cat3D~\citep{gao2024cat3d}                  & NeurIPS'24 & MV-Diff    & $\Delta$pose & \yes& 3DGS& MV gen+recon \\
-    NVComposer~\citep{li2024nvcomposer}         & arXiv'24   & LDM        & Feature  & \yes& -- & Unposed multi-view\\
-    Proj. Repr. Cond.~\citep{han2024prc}        & arXiv'24   & LDM        & 3D proj. & \yes& -- & Projected feat.\\
+    NVComposer~\citep{li2024nvcomposer}         & arXiv'24   & LDM        & Feature  & \yes& -- & Unposed multi-ref\\
     \midrule
     \multicolumn{7}{@{}l}{\textit{Score distillation (text-to-3D)}} \\
     DreamFusion~\citep{poole2023dreamfusion}    & ICLR'23    & LDM+NeRF   & SDS      & \pt & NeRF & SDS \\
@@ -1130,71 +1156,115 @@ addressed in \S\ref{sec:open}.
 
 \subsection{Dynamic Scenes and 4-D World Representation}
 
-The key step from \nvs{} to world modeling requires modelling scene dynamics.
-Beyond the dynamic NeRF and 4DGS methods surveyed above, recent work targets
-\emph{generalizable} 4-D scene generation.
+The step from static \nvs{} to world modeling hinges on modelling
+\emph{temporal dynamics}: how does a scene evolve over time, and can
+the model generate novel views at arbitrary future timestamps?
+The dynamic NeRF and 4DGS methods in §\ref{sec:nerf}--\ref{sec:3dgs}
+address this for \emph{observed} scenes given dense multi-view video.
+A harder and more practically relevant regime is \emph{generalizable}
+4-D generation from sparse or single-image input---precisely the regime
+inhabited by world models.
 
-ViewCrafter~\citep{yu2024viewcrafter} conditions a video diffusion model on
-camera trajectories, producing temporally coherent novel-view sequences.
-4DiM~\citep{watson2024_4dim} generates 4-D scenes from sparse images via
-a 4-D diffusion model.
-SV4D~\citep{xie2024sv4d} extends stable video diffusion to 4-D object generation.
-SV3D~\citep{voleti2024sv3d} generates novel multi-view images and 3-D content
-from a single image using latent video diffusion, achieving high multi-view
-consistency via orbital camera conditioning.
-CAT4D~\citep{wu2024cat4d} extends multi-view diffusion to 4-D creation,
-jointly modelling viewpoint and temporal dimensions.
-Consistent4D~\citep{jiang2024consistent4d} produces temporally consistent
-4-D content via a cascade diffusion approach.
-DreamGaussian4D~\citep{ren2023dreamgaussian4d} combines SDS with 4DGS for
-text-driven 4-D generation.
-Diffusion Priors for Dynamic NVS~\citep{li2024diffpriordynamic} leverages
-video diffusion priors to regularise monocular dynamic view synthesis.
-Dynamic View from Small Motion~\citep{li2024smallmotion} specialises in
-scenes captured with small camera motions, common in handheld videos.
+Video diffusion models have emerged as the most promising backbone.
+ViewCrafter~\citep{yu2024viewcrafter} augments a video diffusion model with
+point-cloud renderings along the target camera trajectory, providing a
+geometric scaffold that constrains the generation while the diffusion prior
+fills in appearance and fine detail.
+CAT4D~\citep{wu2024cat4d} generalises the Cat3D framework to the temporal
+dimension, jointly modelling viewpoint and time with a multi-view video
+diffusion model, then lifting the output to an explicit 4-D representation.
+4DiM~\citep{watson2024_4dim} takes a more direct approach, training a
+4-D diffusion model that simultaneously denoises a set of frames at
+varying timestamps and viewpoints, learning a joint spatiotemporal prior.
+SV3D~\citep{voleti2024sv3d} and SV4D~\citep{xie2024sv4d} extend Stable
+Video Diffusion to 3-D and 4-D object generation respectively, conditioning
+on orbital camera paths to ensure multi-view consistency.
+Consistent4D~\citep{jiang2024consistent4d} enforces temporal consistency
+across a 4-D cascade, resolving inter-frame Gaussian drift.
+DreamGaussian4D~\citep{ren2023dreamgaussian4d} shows that SDS can be applied
+to 4DGS, enabling text-driven 4-D generation without any video training data.
+
+A complementary line of work addresses the \emph{monocular} case.
+Diffusion Priors for Dynamic NVS~\citep{li2024diffpriordynamic} treats the
+diffusion model as a frame-level regulariser during per-scene 4-D optimisation
+from a single monocular video, substantially improving novel-view quality in
+under-constrained regions.
 
 \subsection{Neural Scene Simulators for Autonomous Driving}
 
-Autonomous driving is a prime application of NVS-as-world-model.
+Autonomous driving provides a uniquely demanding test-bed for NVS-as-world-model:
+scenes are large-scale, unbounded, and contain independently moving actors
+(vehicles, pedestrians) that must be rendered consistently from closed-loop
+ego-motion trajectories.
+Three architectural strategies have emerged.
 
-UniSim~\citep{yang2023unisim} constructs a closed-loop neural sensor simulator
-for urban driving, rendering novel views with controllable scene edits.
-MARS~\citep{wu2023mars} composes NeRF-based backgrounds and foreground actors
-for urban scene simulation.
-OmniRe~\citep{chen2024omnire} builds an all-in-one neural driving simulation
-framework.
-EmerNeRF~\citep{yang2023emernerf} is a self-supervised approach for emergent
-dynamic modelling in driving scenes.
-Street Gaussians~\citep{yan2024streetgaussian} applies 3DGS to urban driving.
-PVG~\citep{chen2023pvg} uses periodic vibration Gaussians for real-time
-driving scene reconstruction.
-StreetCrafter~\citep{yan2024streetcrafter} extends video diffusion models with
-controllable camera motion for street-view synthesis.
-Sat2Vid~\citep{wu2022sat2vid} generates street-view panoramic video from a
-single satellite image, bridging aerial and ground-level views.
-Wild-GS~\citep{xu2024wildgs} achieves real-time NVS from unconstrained
-in-the-wild photo collections via appearance decoupling in 3DGS.
+\paragraph{NeRF-based compositional simulators.}
+MARS~\citep{wu2023mars} separates the scene into a static NeRF background
+and per-agent NeRF foregrounds, allowing independent actor manipulation.
+UniSim~\citep{yang2023unisim} extends this to a closed-loop sensor simulator
+that supports controllable scene editing---removing actors, changing weather,
+inserting novel agents---with photorealistic rendering at the ego sensor.
+EmerNeRF~\citep{yang2023emernerf} learns the dynamic-static decomposition
+in a self-supervised manner by decomposing scene flow from multi-camera video,
+without per-actor instance labels.
+
+\paragraph{3DGS-based driving reconstruction.}
+Street Gaussians~\citep{yan2024streetgaussian} extends 3DGS to urban scenes
+by representing tracked foreground objects with separate Gaussian models and
+compositing them over a background Gaussian field.
+PVG~\citep{chen2023pvg} models Gaussian motion with periodic vibration functions
+that efficiently encode slow, cyclic motions common in urban traffic.
+OmniRe~\citep{chen2024omnire} unifies background, foreground, and sky in a
+single Gaussian framework, establishing a strong all-in-one baseline.
+
+\paragraph{Diffusion-based street generation.}
+StreetCrafter~\citep{yan2024streetcrafter} uses a point-cloud-conditioned video
+diffusion model with controllable camera motion, enabling photorealistic
+street-view synthesis for data augmentation.
+Sat2Vid~\citep{wu2022sat2vid} lifts a satellite image to a street-view
+panoramic video, addressing the altitude gap between aerial mapping and
+ground-level perception.
+Wild-GS~\citep{xu2024wildgs} solves the unconstrained internet-photo case by
+disentangling transient and persistent Gaussian appearance in 3DGS.
 InSpatio-WorldFM~\citep{chen2025inspatioworld} is an open-source real-time
-generative frame model for spatial world understanding.
+generative frame model targeting spatial world understanding at scale.
 
 \subsection{Generative World Models and Foundation Models}
 
-Large-scale world foundation models represent the apex of this trajectory.
+World foundation models represent the apex of the NVS-to-world-modeling
+trajectory: systems that jointly handle viewpoint, time, and action, trained
+at internet scale.
+We identify three design axes that differentiate current approaches.
 
-GAIA-1~\citep{hu2023gaia} casts world modeling as unsupervised sequence prediction
-on video, text, and action tokens for autonomous driving.
-Genie~\citep{bruce2024genie} learns to generate interactive 2-D game worlds
-from unsupervised video.
-Genie~2~\citep{parkerholder2024genie2} generates persistent 3-D environments
-from a single image and supports interactive first-person navigation.
-Cosmos~\citep{agarwal2025cosmos} trains world foundation models on internet-scale
-video for physical world simulation.
-Pandora~\citep{xiang2024pandora} interleaves language and video tokens for
-interactive world generation.
-WonderJourney~\citep{yu2023wonderjourney} generates perpetual scene explorations
-via text-guided chains of image generation.
-WonderWorld~\citep{yu2024wonderworld} generates interactive 3-D scenes with
-instant 3DGS from a single image.
+\paragraph{Sequence vs.\ spatial representation.}
+GAIA-1~\citep{hu2023gaia} treats driving scenes as sequences of video, text,
+and action tokens, training an autoregressive transformer to predict the next
+token.
+This approach achieves strong temporal coherence but lacks an explicit 3-D
+representation, limiting viewpoint flexibility.
+Genie~\citep{bruce2024genie} learns a latent action space from unsupervised
+internet videos, enabling interactive game-world generation without action labels---an
+important step toward self-supervised world model pretraining.
+
+\paragraph{3-D-grounded generation.}
+Genie~2~\citep{parkerholder2024genie2} introduces persistent 3-D structure
+into the Genie framework, generating scenes that maintain geometry across
+viewpoints and support first-person interactive navigation---the closest
+current system to an NVS-grounded world model for open-ended environments.
+WonderWorld~\citep{yu2024wonderworld} takes a complementary approach:
+instead of learning from large-scale video, it uses instant 3DGS initialisation
+from a single image combined with diffusion inpainting to generate interactive
+3-D scenes on the fly.
+WonderJourney~\citep{yu2023wonderjourney} chains text-guided scene generation
+steps to produce perpetual explorable 3-D environments.
+
+\paragraph{Physical-world foundation models.}
+Cosmos~\citep{agarwal2025cosmos} is the most ambitious current effort:
+a family of world foundation models pretrained on internet-scale video with
+explicit physical world conditioning, designed for downstream fine-tuning
+to robotics and autonomous driving.
+Pandora~\citep{xiang2024pandora} interleaves language and video tokens,
+enabling language-driven world simulation with both visual and linguistic output.
 
 Table~\ref{tab:worldmodels} compares world modeling methods.
 
@@ -1226,14 +1296,32 @@ Table~\ref{tab:worldmodels} compares world modeling methods.
 
 \subsection{Embodied AI and Robotics}
 
-NVS provides the spatial grounding essential for embodied AI systems.
-Dex-NeRF~\citep{ichnowski2021dex} uses NeRF for transparent-object grasping.
-iNeRF~\citep{yen2021inerf} inverts NeRF for 6-DoF pose estimation.
-NeRF-Supervisor~\citep{ze2023nerf_supervisor} uses NeRF as a view synthesis
-engine for robot visual planning.
-GaussianGrasping~\citep{shorinwa2024gaussiangrasping} uses 3DGS for
-real-time manipulation planning.
-RoboGSim~\citep{li2024robogssim} builds robot simulation environments with 3DGS.
+NVS is more than a rendering tool in robotics: it provides the
+\emph{spatial prior} that allows agents to reason about unseen parts of the
+environment before taking action.
+Three use patterns have emerged.
+
+\textbf{Pose estimation and object localisation.}
+iNeRF~\citep{yen2021inerf} inverts a trained NeRF to estimate 6-DoF camera
+pose by gradient descent on the rendered photometric error---the first
+demonstration that NeRF's differentiable renderer can be repurposed for
+inference as well as reconstruction.
+Dex-NeRF~\citep{ichnowski2021dex} applies NeRF to transparent-object grasping,
+where conventional depth sensors fail, by leveraging NeRF's ability to
+model view-dependent appearance to infer geometry from specular reflections.
+
+\textbf{Visual planning and manipulation.}
+NeRF-Supervisor~\citep{ze2023nerf_supervisor} uses a pre-trained NeRF to
+synthesise robot-wrist camera views at hypothetical future poses, enabling
+visual planning without physical rollouts.
+GaussianGrasping~\citep{shorinwa2024gaussiangrasping} replaces NeRF with 3DGS
+for real-time manipulation planning, exploiting the explicit Gaussian representation
+for fast collision checking and grasp pose optimisation.
+
+\textbf{Simulation-to-real transfer.}
+RoboGSim~\citep{li2024robogssim} reconstructs robot workspaces in 3DGS and
+renders synthetic training demonstrations from novel viewpoints, directly
+closing the sim-to-real gap for visuomotor policy learning.
 
 \subsection{Human Novel View Synthesis}
 
