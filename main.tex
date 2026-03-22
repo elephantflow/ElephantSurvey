@@ -496,36 +496,69 @@ BakedSDF~\citep{yariv2023bakedsdf} combines the surface quality of SDF-based
 NeRF with real-time rendering by extracting and baking the learned SDF into a
 high-quality mesh.
 
-Table~\ref{tab:nerf_methods} summarises representative NeRF variants.
+Table~\ref{tab:nerf_methods} provides a comprehensive comparison of NeRF variants
+across all three sub-families: per-scene optimisation, generalizable,
+and dynamic methods.
 
-\begin{table}[t]
+\begin{table*}[t]
   \centering
-  \caption{NeRF variants: representative methods and properties.}
+  \caption{Comprehensive NeRF method comparison.
+    \textbf{Category}: PS=per-scene, GEN=generalizable, DYN=dynamic.
+    \textbf{Train}/\textbf{Render}: speed relative to vanilla NeRF (Fast/Med/Slow).
+    \textbf{Gen.}: generalizes across scenes without per-scene re-training.
+    \textbf{Dyn.}: handles dynamic or deformable scenes.
+    \textbf{Surf.}: produces explicit surface (mesh/SDF).}
   \label{tab:nerf_methods}
   \scriptsize
   \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}llccccl@{}}
+  \begin{tabular}{@{}llccccccp{4.2cm}@{}}
     \toprule
-    \textbf{Method} & \textbf{Venue}
+    \textbf{Method} & \textbf{Venue} & \textbf{Cat.}
       & \textbf{Train} & \textbf{Render}
-      & \textbf{Generalise} & \textbf{Key Contribution} \\
+      & \textbf{Gen.} & \textbf{Dyn.} & \textbf{Surf.}
+      & \textbf{Key Contribution} \\
     \midrule
-    NeRF~\citep{mildenhall2020nerf}            & ECCV'20   & Slow  & Slow & \no  & MLP + positional enc. \\
-    NeRF-W~\citep{martinbrualla2021nerfw}       & CVPR'21   & Slow  & Slow & \no  & In-the-wild appearance \\
-    Mip-NeRF~\citep{barron2021mipnerf}         & ICCV'21   & Slow  & Slow & \no  & Anti-aliased cones \\
-    Plenoxels~\citep{fridovich2022plenoxels}   & CVPR'22   & Fast  & Fast & \no  & No-MLP voxel grid \\
-    TensoRF~\citep{chen2022tensorf}            & ECCV'22   & Med   & Fast & \no  & Tensor decomp. \\
-    DirectVoxGO~\citep{sun2022dvgo}            & CVPR'22   & Fast  & Fast & \no  & Two-stage voxel \\
-    Instant-NGP~\citep{muller2022instant}      & TOG'22    & Fast  & Fast & \no  & Hash grid \\
-    Mip-NeRF360~\citep{barron2022mipnerf360}   & CVPR'22   & Slow  & Slow & \no  & Unbounded scenes \\
-    Ref-NeRF~\citep{verbin2022refnerf}         & CVPR'22   & Slow  & Slow & \no  & Specular reflection \\
-    NeuS~\citep{wang2021neus}                  & NeurIPS'21& Slow  & Slow & \no  & SDF-based surface \\
-    VolSDF~\citep{yariv2021volsdf}             & NeurIPS'21& Slow  & Slow & \no  & SDF-density bridge \\
-    Zip-NeRF~\citep{barron2023zipnerf}         & ICCV'23   & Fast  & Fast & \no  & Hash + anti-alias \\
-    BakedSDF~\citep{yariv2023bakedsdf}         & SIGGRAPH'23& Med  & Fast & \no  & Mesh extraction \\
+    \multicolumn{9}{@{}l}{\textit{Per-scene optimisation}} \\
+    NeRF~\citep{mildenhall2020nerf}            & ECCV'20    & PS & Slow & Slow & \no & \no & \no & MLP + positional encoding \\
+    NeRF-W~\citep{martinbrualla2021nerfw}       & CVPR'21    & PS & Slow & Slow & \no & \no & \no & In-the-wild appearance codes \\
+    Mip-NeRF~\citep{barron2021mipnerf}         & ICCV'21    & PS & Slow & Slow & \no & \no & \no & Integrated positional encoding \\
+    NeuS~\citep{wang2021neus}                  & NeurIPS'21 & PS & Slow & Slow & \no & \no & \yes & SDF-based volume rendering \\
+    VolSDF~\citep{yariv2021volsdf}             & NeurIPS'21 & PS & Slow & Slow & \no & \no & \yes & Analytical SDF-to-density \\
+    Plenoxels~\citep{fridovich2022plenoxels}   & CVPR'22    & PS & Fast & Fast & \no & \no & \no & No-MLP voxel grid + SH \\
+    TensoRF~\citep{chen2022tensorf}            & ECCV'22    & PS & Med  & Fast & \no & \no & \no & CP/VM tensor decomposition \\
+    DirectVoxGO~\citep{sun2022dvgo}            & CVPR'22    & PS & Fast & Fast & \no & \no & \no & Two-stage coarse-to-fine voxel \\
+    Instant-NGP~\citep{muller2022instant}      & TOG'22     & PS & Fast & Fast & \no & \no & \no & Multi-resolution hash grid \\
+    Mip-NeRF360~\citep{barron2022mipnerf360}   & CVPR'22    & PS & Slow & Slow & \no & \no & \no & Unbounded scene contraction \\
+    Ref-NeRF~\citep{verbin2022refnerf}         & CVPR'22    & PS & Slow & Slow & \no & \no & \no & Physics-based reflection model \\
+    Zip-NeRF~\citep{barron2023zipnerf}         & ICCV'23    & PS & Fast & Fast & \no & \no & \no & Hash grid + anti-aliasing \\
+    BakedSDF~\citep{yariv2023bakedsdf}         & SIGGRAPH'23& PS & Med  & Fast & \no & \no & \yes & SDF mesh extraction + baking \\
+    \midrule
+    \multicolumn{9}{@{}l}{\textit{Generalizable methods}} \\
+    pixelNeRF~\citep{yu2021pixelnerf}          & CVPR'21    & GEN& Fast & Slow & \yes& \no & \no & Pixel-aligned CNN features \\
+    IBRNet~\citep{wang2021ibrnet}              & CVPR'21    & GEN& Fast & Slow & \yes& \no & \no & Cross-view transformer aggregation \\
+    MVSNeRF~\citep{chen2021mvsnerf}            & ICCV'21    & GEN& Fast & Slow & \yes& \no & \no & Cost-volume geometry prior \\
+    SRT~\citep{sajjadi2022srt}                 & CVPR'22    & GEN& Fast & Fast & \yes& \no & \no & Set-latent scene representation \\
+    GNT~\citep{wang2022gnt}                    & arXiv'22   & GEN& Fast & Med  & \yes& \no & \no & Fully attention-based, no NeRF MLP \\
+    NerfDiff~\citep{gu2023nerfdiff}            & ICML'23    & GEN& Fast & Slow & \yes& \no & \no & Diffusion prior for single-view \\
+    ZeroRF~\citep{shi2023zerorf}               & arXiv'23   & GEN& Med  & Slow & \pt & \no & \no & Zero-pretrain sparse-view 360$^\circ$ \\
+    FrameNeRF~\citep{yan2024framenerf}         & arXiv'24   & GEN& Fast & Slow & \yes& \no & \no & Video frames as pseudo views \\
+    \midrule
+    \multicolumn{9}{@{}l}{\textit{Dynamic \& deformable methods}} \\
+    D-NeRF~\citep{pumarola2021dnerf}           & CVPR'21    & DYN& Slow & Slow & \no & \yes& \no & Canonical deformation network \\
+    NSFF~\citep{li2021neural_scene_flow}       & CVPR'21    & DYN& Slow & Slow & \no & \yes& \no & Explicit scene flow field \\
+    Nerfies~\citep{park2021nerfies}            & ICCV'21    & DYN& Slow & Slow & \no & \yes& \no & Per-frame latent deformation \\
+    HyperNeRF~\citep{park2021hypernerf}        & TOG'21     & DYN& Slow & Slow & \no & \yes& \no & Higher-dimensional ambient space \\
+    Non-Rigid NeRF~\citep{tretschk2021nonrigid}& ICCV'21    & DYN& Slow & Slow & \no & \yes& \no & Monocular ray bending \\
+    DyNeRF~\citep{li2022neural3d}              & CVPR'22    & DYN& Slow & Slow & \no & \yes& \no & Time-conditioned multi-view NeRF \\
+    TiNeuVox~\citep{fang2022tineuvox}          & SIGGRAPH'22& DYN& Med  & Med  & \no & \yes& \no & Voxel-accelerated dynamic NeRF \\
+    K-Planes~\citep{fridovich2023kplanes}      & CVPR'23    & DYN& Fast & Fast & \no & \yes& \no & 4-D plane decomposition \\
+    HexPlane~\citep{cao2023hexplane}           & CVPR'23    & DYN& Fast & Fast & \no & \yes& \no & Concurrent 4-D plane factorisation \\
+    NeRFPlayer~\citep{song2023nerfplayer}      & TOG'23     & DYN& Med  & Med  & \no & \yes& \no & Static/deforming/new region decomp. \\
+    Soup-of-Planes~\citep{du2023soupofplanes}  & ICCV'23    & DYN& Fast & Fast & \no & \yes& \no & Planar fitting for casual video \\
+    Pseudo-GDV~\citep{zhao2024pgdvs}           & CVPR'24    & DYN& Med  & Slow & \no & \yes& \no & Static + dynamic inpainting \\
     \bottomrule
   \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Generalizable NeRF}
 
@@ -594,34 +627,8 @@ from monocular video by combining static and dynamic video inpainting.
 Decoupled Dynamic Video~\citep{wang2024decoupleddynamic} disentangles foreground
 dynamics and background statics for monocular dynamic view synthesis.
 
-Table~\ref{tab:dynamic_nerf} summarises dynamic NeRF methods.
-
-\begin{table}[t]
-  \centering
-  \caption{Dynamic NeRF methods.}
-  \label{tab:dynamic_nerf}
-  \scriptsize
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}llccl@{}}
-    \toprule
-    \textbf{Method} & \textbf{Venue}
-      & \textbf{Multi-view} & \textbf{Monocular} & \textbf{Key Idea} \\
-    \midrule
-    D-NeRF~\citep{pumarola2021dnerf}           & CVPR'21   & \yes & \no  & Deformation network \\
-    NSFF~\citep{li2021neural_scene_flow}       & CVPR'21   & \yes & \pt  & Scene flow field \\
-    Non-Rigid NeRF~\citep{tretschk2021nonrigid}& ICCV'21   & \no  & \yes & Ray bending \\
-    Nerfies~\citep{park2021nerfies}            & ICCV'21   & \no  & \yes & Latent deformation \\
-    HyperNeRF~\citep{park2021hypernerf}        & TOG'21    & \no  & \yes & Ambient dimension \\
-    DyNeRF~\citep{li2022neural3d}              & CVPR'22   & \yes & \no  & Multi-view video NeRF \\
-    TiNeuVox~\citep{fang2022tineuvox}          & SIGGRAPH'22& \yes & \no & Voxel dynamic accel. \\
-    K-Planes~\citep{fridovich2023kplanes}      & CVPR'23   & \yes & \pt  & 4-D plane decomp. \\
-    HexPlane~\citep{cao2023hexplane}           & CVPR'23   & \yes & \pt  & Hexagonal planes \\
-    NeRFPlayer~\citep{song2023nerfplayer}      & TOG'23    & \yes & \no  & Region decomp. \\
-    Soup-of-Planes~\citep{du2023soupofplanes}  & arXiv'23  & \no  & \yes & Planar scene fitting \\
-    Pseudo-GDV~\citep{zhao2024pgdvs}           & CVPR'24   & \no  & \yes & Static+dyn. inpaint \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+The dynamic NeRF methods are included in the comprehensive
+Table~\ref{tab:nerf_methods} above.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{3D Gaussian Splatting}
@@ -689,37 +696,71 @@ rendered views, enabling instance-level part decomposition and editing.
 GALA3D~\citep{zhou2024gala3d} uses an LLM to generate a 3-D layout from text
 and initialises Gaussians per-object, enabling compositional scene generation.
 
-Table~\ref{tab:3dgs_methods} summarises key 3DGS variants.
+Table~\ref{tab:3dgs_methods} provides a comprehensive view of the 3DGS family.
 
-\begin{table}[t]
+\begin{table*}[t]
   \centering
-  \caption{3DGS variants.}
+  \caption{Comprehensive 3D Gaussian Splatting method comparison.
+    \textbf{Category}: STATIC=per-scene static, DYN=dynamic/deformable, FF=feed-forward generalizable.
+    \textbf{RT}: real-time rendering ($>$30\,fps).
+    \textbf{Comp.}: dedicated compression or storage reduction.
+    \textbf{Surf.}: explicit surface extraction.
+    \textbf{Unp.}: works on unposed images.
+    \textbf{Input}: minimum input views for FF methods.}
   \label{tab:3dgs_methods}
   \scriptsize
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}llcccccl@{}}
+  \setlength{\tabcolsep}{2.8pt}
+  \begin{tabular}{@{}llcccccccp{3.8cm}@{}}
     \toprule
-    \textbf{Method} & \textbf{Venue}
-      & \textbf{RT} & \textbf{Dyn.}
-      & \textbf{Surf.} & \textbf{Comp.} & \textbf{Key Idea} \\
+    \textbf{Method} & \textbf{Venue} & \textbf{Cat.}
+      & \textbf{RT} & \textbf{Comp.} & \textbf{Surf.}
+      & \textbf{Edit.} & \textbf{Unp.} & \textbf{Input}
+      & \textbf{Key Contribution} \\
     \midrule
-    3DGS~\citep{kerbl2023gaussian}             & TOG'23    & \yes & \no & \no & \no & Gaussian splatting \\
-    Mip-Splatting~\citep{yu2024mipsplatting}   & CVPR'24   & \yes & \no & \no & \no & Anti-aliased splats \\
-    AbsGS~\citep{ye2024absgs}                  & NeurIPS'24& \yes & \no & \no & \no & Absolute grad. dens. \\
-    Scaffold-GS~\citep{lu2023scaffoldgs}       & CVPR'24   & \yes & \no & \no & \yes& Anchor structure \\
-    LightGaussian~\citep{fan2023lightgaussian} & NeurIPS'23& \yes & \no & \no & \yes& Pruning + VQ \\
-    Compact3D~\citep{lee2024compact3d}         & arXiv'24  & \yes & \no & \no & \yes& k-means codebook \\
-    EAGLES~\citep{girish2024eagles}            & ECCV'24   & \yes & \no & \no & \yes& Residual VQ \\
-    HAC~\citep{chen2024hac}                    & ECCV'24   & \yes & \no & \no & \yes& Hash context model \\
-    SuGaR~\citep{guedon2024sugar}              & CVPR'24   & \yes & \no & \yes& \no & Joint mesh+GS \\
-    2DGS~\citep{huang2024_2dgs}                & SIGGRAPH'24& \yes& \no & \yes& \no & 2-D disk Gaussians \\
-    GOF~\citep{yu2024gof}                      & arXiv'24  & \yes & \no & \yes& \no & Opacity field \\
-    GaussianEditor~\citep{chen2024gaussianeditor}& CVPR'24  & \yes & \no & \no & \no & LLM-guided editing \\
-    Gaussian Grouping~\citep{ye2023gaussian_grouping}& ECCV'24 & \yes & \no & \no & \no & Identity field \\
-    GALA3D~\citep{zhou2024gala3d}              & arXiv'24  & \yes & \no & \no & \no & Compositional gen. \\
+    \multicolumn{10}{@{}l}{\textit{Static per-scene}} \\
+    3DGS~\citep{kerbl2023gaussian}               & TOG'23      & S & \yes& \no & \no & \no & \no & MV  & Tile-based Gaussian splatting \\
+    Mip-Splatting~\citep{yu2024mipsplatting}     & CVPR'24     & S & \yes& \no & \no & \no & \no & MV  & 3-D smoothing filter, anti-alias \\
+    AbsGS~\citep{ye2024absgs}                    & NeurIPS'24  & S & \yes& \no & \no & \no & \no & MV  & Absolute-gradient densification \\
+    Scaffold-GS~\citep{lu2023scaffoldgs}         & CVPR'24     & S & \yes& \yes& \no & \no & \no & MV  & Anchor-driven neural attributes \\
+    LightGaussian~\citep{fan2023lightgaussian}   & NeurIPS'23  & S & \yes& \yes& \no & \no & \no & MV  & Visibility pruning + VQ, 15$\times$ \\
+    Compact3D~\citep{lee2024compact3d}           & arXiv'24    & S & \yes& \yes& \no & \no & \no & MV  & k-means codebook compression \\
+    EAGLES~\citep{girish2024eagles}              & ECCV'24     & S & \yes& \yes& \no & \no & \no & MV  & Residual vector quantisation \\
+    HAC~\citep{chen2024hac}                      & ECCV'24     & S & \yes& \yes& \no & \no & \no & MV  & Hash context entropy coding \\
+    SuGaR~\citep{guedon2024sugar}                & CVPR'24     & S & \yes& \no & \yes& \pt & \no & MV  & Flat-disc + mesh joint opt. \\
+    2DGS~\citep{huang2024_2dgs}                  & SIGGRAPH'24 & S & \yes& \no & \yes& \no & \no & MV  & 2-D disc primitives \\
+    GOF~\citep{yu2024gof}                        & arXiv'24    & S & \yes& \no & \yes& \no & \no & MV  & Opacity field for surface \\
+    GaussianEditor~\citep{chen2024gaussianeditor} & CVPR'24    & S & \yes& \no & \no & \yes& \no & MV  & LLM-guided semantic editing \\
+    Gaussian Grouping~\citep{ye2023gaussian_grouping}& ECCV'24  & S & \yes& \no & \no & \yes& \no & MV  & SAM-based identity field \\
+    GALA3D~\citep{zhou2024gala3d}                & ICML'24     & S & \yes& \no & \no & \yes& \no & MV  & LLM-layout compositional gen. \\
+    LERF~\citep{kerr2023lerf}                    & ICCV'23     & S & \no & \no & \no & \pt & \no & MV  & CLIP language grounding in NeRF \\
+    LangSplat~\citep{qin2024langsplat}           & CVPR'24     & S & \yes& \no & \no & \pt & \no & MV  & Language field in 3DGS \\
+    \midrule
+    \multicolumn{10}{@{}l}{\textit{Dynamic \& deformable}} \\
+    4DGS~\citep{wu2024_4dgs}                     & CVPR'24     & D & \yes& \no & \no & \no & \no & MV  & 4-D Gaussian + temporal field \\
+    Deformable3DGS~\citep{yang2024deformable}    & ICLR'24     & D & \yes& \no & \no & \no & \no & Mono& Canonical deformation network \\
+    SpacetimeGaussians~\citep{yang2024spacetime} & CVPR'24     & D & \yes& \no & \no & \no & \no & MV  & Polynomial time trajectories \\
+    SC-GS~\citep{huang2024scgs}                  & CVPR'24     & D & \yes& \no & \no & \no & \no & Mono& Sparse control point deform. \\
+    Gaussian-Flow~\citep{lin2024gaussianflow}    & CVPR'24     & D & \yes& \no & \no & \no & \no & MV  & Fourier polynomial motion \\
+    Shape-of-Motion~\citep{wang2024shapeofmotion}& arXiv'24    & D & \no & \no & \no & \no & \no & Mono& Per-Gaussian 3-D motion \\
+    Dynamic 3DGS~\citep{luiten2024dynamic3dgs}   & 3DV'24      & D & \yes& \no & \no & \no & \no & MV  & Persistent Gaussian tracking \\
+    GauFRe~\citep{liang2024gaufre}               & arXiv'24    & D & \yes& \no & \no & \no & \no & Mono& Flow-regularised deformation \\
+    MoVieS~\citep{sun2024movies}                 & arXiv'24    & D & \yes& \no & \no & \no & \no & Mono& 4-D synthesis in $\sim$1 second \\
+    SC-4D~\citep{kim2024selfcal4d}               & arXiv'24    & D & \no & \no & \no & \no & \no & Mono& Self-calibrating 4-D from video \\
+    Reconstruct-Inpaint~\citep{han2024rif}       & arXiv'24    & D & \no & \no & \no & \no & \no & Mono& Recon + inpaint + TTF pipeline \\
+    Articulated-GS~\citep{li2024articulatedgs}   & NeurIPS'24  & D & \yes& \no & \no & \no & \no & MV  & Template-free articulated 3DGS \\
+    EVA-Gaussian~\citep{hu2024evacg}             & arXiv'24    & D & \yes& \no & \no & \no & \no & MV  & Real-time human NVS \\
+    \midrule
+    \multicolumn{10}{@{}l}{\textit{Feed-forward generalizable}} \\
+    pixelSplat~\citep{charatan2024pixelsplat}    & CVPR'24     & FF& \yes& \no & \no & \no & \no & 2   & Stereo epipolar features \\
+    MVSplat~\citep{chen2024mvsplat}              & ECCV'24     & FF& \yes& \no & \no & \no & \no & 2--6& Cost-volume geometry prior \\
+    TranSplat~\citep{zhang2024transplate}        & arXiv'24    & FF& \yes& \no & \no & \no & \no & 2+  & Transformer MV prediction \\
+    FSGS~\citep{zhu2024fsgs}                     & CVPR'24     & FF& \yes& \no & \no & \no & \no & 3   & Gaussian unpooling, few-shot \\
+    DepthSplat~\citep{xu2024depthsplat}          & arXiv'24    & FF& \yes& \no & \no & \no & \no & 2+  & Joint depth + Gaussian pred. \\
+    Splatt3R~\citep{smart2024splatt3r}           & arXiv'24    & FF& \yes& \no & \no & \no & \yes& 2   & DUSt3R backbone, unposed \\
+    TriplaneGaussian~\citep{zou2024triplanegaussian}& CVPR'24   & FF& \yes& \no & \no & \no & \no & 1   & Triplane + Gaussian, single-view \\
     \bottomrule
   \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Dynamic 3DGS}
 
@@ -767,29 +808,8 @@ for generalizable NVS.
 TriplaneGaussian~\citep{zou2024triplanegaussian} combines triplane and
 Gaussian representations in a transformer-based single-view reconstruction model.
 
-Table~\ref{tab:feedforward_gs} summarises feed-forward generalizable 3DGS.
-
-\begin{table}[t]
-  \centering
-  \caption{Feed-forward generalizable Gaussian Splatting methods.}
-  \label{tab:feedforward_gs}
-  \scriptsize
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}llcccl@{}}
-    \toprule
-    \textbf{Method} & \textbf{Venue}
-      & \textbf{Input views} & \textbf{Unposed} & \textbf{Key Idea} \\
-    \midrule
-    pixelSplat~\citep{charatan2024pixelsplat}    & CVPR'24   & 2      & \no  & Stereo epipolar feat. \\
-    MVSplat~\citep{chen2024mvsplat}              & ECCV'24   & 2--6   & \no  & Cost volume prior \\
-    TranSplat~\citep{zhang2024transplate}        & arXiv'24  & 2+     & \no  & Transformer MV \\
-    FSGS~\citep{zhu2024fsgs}                     & CVPR'24   & 3      & \no  & Gaussian unpooling \\
-    DepthSplat~\citep{xu2024depthsplat}          & arXiv'24  & 2+     & \no  & Joint depth+GS \\
-    Splatt3R~\citep{smart2024splatt3r}           & arXiv'24  & 2      & \yes & DUSt3R backbone \\
-    TriplaneGaussian~\citep{zou2024triplanegaussian}& CVPR'24 & 1      & \no  & Triplane+Gaussian \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+The feed-forward generalizable methods are included in the comprehensive
+Table~\ref{tab:3dgs_methods} above (FF category).
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Generalisable Feed-Forward 3D Reconstruction}
@@ -1420,36 +1440,60 @@ for generalizable NVS training.
 
 Table~\ref{tab:datasets} provides a structured comparison of key datasets.
 
-\begin{table}[t]
+\begin{table*}[t]
   \centering
-  \caption{Key NVS datasets. RT=real, Syn=synthetic.}
+  \caption{NVS and world modeling datasets.
+    \textbf{Type}: RT=real, Syn=synthetic.
+    \textbf{Dyn.}: contains dynamic content.
+    \textbf{Depth}: provides ground-truth or LiDAR depth.
+    \textbf{Pose}: provides camera/LiDAR extrinsics.
+    \textbf{Sem.}: provides semantic / instance labels.
+    \textbf{Scale}: approximate number of scenes/objects/sequences.
+    \textbf{Primary use}: main application in the NVS literature.}
   \label{tab:datasets}
   \scriptsize
   \setlength{\tabcolsep}{2.5pt}
-  \begin{tabular}{@{}llcccccc@{}}
+  \begin{tabular}{@{}llccccccp{3.5cm}@{}}
     \toprule
     \textbf{Dataset} & \textbf{Year} & \textbf{Type}
-      & \textbf{Dyn.} & \textbf{GT Depth}
-      & \textbf{Scale} & \textbf{Primary Use} \\
+      & \textbf{Dyn.} & \textbf{Depth} & \textbf{Pose}
+      & \textbf{Sem.} & \textbf{Scale}
+      & \textbf{Primary Use} \\
     \midrule
-    ShapeNet~\citep{chang2015shapenet}            & 2015 & Syn & \no & \yes & 51K obj. & Recon. training \\
-    DTU~\citep{jensen2014dtu}                     & 2014 & RT  & \no & \yes & 124 scn. & MVS/NVS \\
-    LLFF~\citep{mildenhall2019llff}               & 2019 & RT  & \no & \no  & 8 scn.   & Fwd-facing \\
-    NeRF-Synth.~\citep{mildenhall2020nerf}        & 2020 & Syn & \no & \yes & 8 obj.   & NeRF eval. \\
-    RealEstate10K~\citep{zhou2018stereoMagnification}& 2018 & RT & \no & \no & 10K vid. & Generalizable NVS \\
-    Tanks\&Temples~\citep{knapitsch2017tanks}     & 2017 & RT  & \no & \yes & Large    & Reconstruction \\
-    D-NeRF~\citep{pumarola2021dnerf}              & 2021 & Syn & \yes& \no  & 6 obj.   & Dynamic NeRF \\
-    HyperNeRF~\citep{park2021hypernerf}           & 2021 & RT  & \yes& \no  & Small    & Topol. change \\
-    Mip-NeRF360~\citep{barron2022mipnerf360}      & 2022 & RT  & \no & \no  & 9 scn.   & Unbounded \\
-    Neu3D~\citep{li2022neural3d}                  & 2022 & RT  & \yes& \no  & Human    & Dyn. 3DGS \\
-    Co3D~\citep{reizenstein2021co3d}              & 2021 & RT  & \pt & \no  & 19K seq. & Category NVS \\
-    ScanNet++~\citep{yeshwanth2023scannetpp}      & 2023 & RT  & \no & \yes & Indoor   & Generalise \\
-    Objaverse~\citep{deitke2023objaverse}         & 2023 & Syn & \pt & \yes & 800K obj.& LRM training \\
-    Waymo Open~\citep{sun2020waymo}               & 2020 & RT  & \yes& \yes & Urban    & Driving sim. \\
-    nuScenes~\citep{caesar2020nuscenes}           & 2020 & RT  & \yes& \pt  & Urban    & World model \\
+    \multicolumn{9}{@{}l}{\textit{Object-centric}} \\
+    ShapeNet~\citep{chang2015shapenet}               & 2015 & Syn & \no & \yes & \yes & \yes & 51K obj.   & Generative 3-D training \\
+    NeRF-Synthetic~\citep{mildenhall2020nerf}        & 2020 & Syn & \no & \yes & \yes & \no  & 8 obj.     & Per-scene NeRF evaluation \\
+    Co3Dv2~\citep{reizenstein2021co3d}               & 2021 & RT  & \pt & \no  & \yes & \yes & 19K seq.   & Category-level NVS \\
+    Objaverse~\citep{deitke2023objaverse}            & 2023 & Syn & \pt & \yes & \yes & \pt  & 800K obj.  & LRM / diffusion training \\
+    Objaverse-XL~\citep{deitke2024objaversexl}       & 2024 & Syn & \pt & \yes & \yes & \pt  & 10M+ obj.  & Large-scale 3-D pretraining \\
+    MVImgNet~\citep{yu2023mvimgnet}                  & 2023 & RT  & \no & \no  & \yes & \yes & 238K seq.  & Category generalizable NVS \\
+    \midrule
+    \multicolumn{9}{@{}l}{\textit{Static indoor / outdoor scenes}} \\
+    DTU~\citep{jensen2014dtu}                        & 2014 & RT  & \no & \yes & \yes & \no  & 124 scn.   & MVS / NVS evaluation \\
+    LLFF~\citep{mildenhall2019llff}                  & 2019 & RT  & \no & \no  & \yes & \no  & 8 scn.     & Forward-facing NeRF \\
+    Tanks\&Temples~\citep{knapitsch2017tanks}        & 2017 & RT  & \no & \yes & \yes & \no  & 14 scn.    & Large-scale reconstruction \\
+    Mip-NeRF360~\citep{barron2022mipnerf360}         & 2022 & RT  & \no & \no  & \yes & \no  & 9 scn.     & Unbounded 360$^\circ$ NVS \\
+    ScanNet~\citep{dai2017scannet}                   & 2017 & RT  & \no & \yes & \yes & \yes & 1513 seq.  & Indoor 3-D reconstruction \\
+    ScanNet++~\citep{yeshwanth2023scannetpp}         & 2023 & RT  & \no & \yes & \yes & \yes & 460 scn.   & Generalizable NVS, hi-res \\
+    RealEstate10K~\citep{zhou2018stereoMagnification}& 2018 & RT  & \no & \no  & \yes & \no  & 10K vid.   & Generalizable video NVS \\
+    \midrule
+    \multicolumn{9}{@{}l}{\textit{Dynamic scenes}} \\
+    D-NeRF~\citep{pumarola2021dnerf}                 & 2021 & Syn & \yes& \no  & \yes & \no  & 6 obj.     & Dynamic NeRF evaluation \\
+    HyperNeRF~\citep{park2021hypernerf}              & 2021 & RT  & \yes& \no  & \yes & \no  & 15 seq.    & Topological deformation \\
+    CMU Panoptic~\citep{joo2015panoptic}             & 2015 & RT  & \yes& \yes & \yes & \yes & 65 seq.    & Multi-view social activities \\
+    Neu3D~\citep{li2022neural3d}                     & 2022 & RT  & \yes& \no  & \yes & \no  & 6 seq.     & Multi-view human video NeRF \\
+    iPhone Dataset~\citep{guo2022neural}             & 2022 & RT  & \yes& \no  & \no  & \no  & 14 seq.    & Casually-captured dynamic NVS \\
+    \midrule
+    \multicolumn{9}{@{}l}{\textit{Autonomous driving \& large-scale}} \\
+    KITTI~\citep{geiger2013kitti}                    & 2013 & RT  & \yes& \yes & \yes & \yes & Urban      & Early driving benchmark \\
+    Waymo Open~\citep{sun2020waymo}                  & 2020 & RT  & \yes& \yes & \yes & \yes & 1000 seg.  & Driving sensor simulation \\
+    nuScenes~\citep{caesar2020nuscenes}              & 2020 & RT  & \yes& \pt  & \yes & \yes & 1000 scn.  & 360$^\circ$ driving world model \\
+    KITTI-360~\citep{liao2022kitti360}               & 2022 & RT  & \yes& \yes & \yes & \yes & Urban      & Urban scene NVS + panoptic \\
+    Argoverse~2~\citep{wilson2023argoverse2}         & 2023 & RT  & \yes& \yes & \yes & \yes & 1000 seq.  & High-res 360$^\circ$ driving \\
+    PandaSet~\citep{xiao2021pandaset}                & 2020 & RT  & \yes& \yes & \yes & \yes & 103 scn.   & LiDAR+camera NVS \\
     \bottomrule
   \end{tabular}
-\end{table}
+\end{table*}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Evaluation Metrics and Protocols}
@@ -1465,33 +1509,52 @@ best correlated with human judgement.
 Table~\ref{tab:nerf_benchmark} shows representative benchmark results on
 NeRF-Synthetic and LLFF.
 
-\begin{table}[t]
+\begin{table*}[t]
   \centering
-  \caption{NVS quality on NeRF-Synthetic (Blender) and LLFF datasets.
-    Higher PSNR/SSIM and lower LPIPS are better.}
+  \caption{Quantitative NVS comparison on three standard benchmarks.
+    NeRF-Synthetic: bounded synthetic objects (8 scenes).
+    LLFF: real forward-facing scenes (8 scenes).
+    Mip-NeRF360: real unbounded 360$^\circ$ scenes (9 scenes).
+    Higher PSNR/SSIM and lower LPIPS are better.
+    ``--'' indicates not reported on that benchmark.
+    $\dagger$~denotes generalizable methods evaluated without per-scene fine-tuning.}
   \label{tab:nerf_benchmark}
   \scriptsize
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}lcccccc@{}}
+  \setlength{\tabcolsep}{2.8pt}
+  \begin{tabular}{@{}llccccccccc@{}}
     \toprule
-    \multirow{2}{*}{\textbf{Method}} &
-    \multicolumn{3}{c}{\textbf{NeRF-Synthetic}} &
-    \multicolumn{3}{c}{\textbf{LLFF}} \\
-    \cmidrule(lr){2-4}\cmidrule(lr){5-7}
-      & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$
-      & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ \\
+    \multirow{2}{*}{\textbf{Method}} & \multirow{2}{*}{\textbf{Venue}}
+      & \multicolumn{3}{c}{\textbf{NeRF-Synthetic}}
+      & \multicolumn{3}{c}{\textbf{LLFF}}
+      & \multicolumn{3}{c}{\textbf{Mip-NeRF360}} \\
+    \cmidrule(lr){3-5}\cmidrule(lr){6-8}\cmidrule(lr){9-11}
+      & & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$
+        & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$
+        & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ \\
     \midrule
-    NeRF~\citep{mildenhall2020nerf}           & 31.01 & 0.947 & 0.081 & 26.50 & 0.811 & 0.250 \\
-    Mip-NeRF~\citep{barron2021mipnerf}        & 33.09 & 0.961 & 0.043 & 26.70 & 0.829 & 0.177 \\
-    Instant-NGP~\citep{muller2022instant}     & 33.18 & 0.963 & 0.037 & 25.59 & 0.817 & 0.224 \\
-    TensoRF~\citep{chen2022tensorf}           & 33.14 & 0.963 & 0.047 & 26.73 & 0.839 & 0.204 \\
-    Mip-NeRF360~\citep{barron2022mipnerf360}  & --    & --    & --    & 29.40 & 0.901 & 0.127 \\
-    3DGS~\citep{kerbl2023gaussian}            & 33.32 & 0.963 & 0.044 & 27.21 & 0.815 & 0.183 \\
-    Mip-Splatting~\citep{yu2024mipsplatting}  & 34.66 & 0.973 & 0.019 & 27.79 & 0.827 & 0.163 \\
-    Zip-NeRF~\citep{barron2023zipnerf}        & --    & --    & --    & 30.38 & 0.921 & 0.100 \\
+    \multicolumn{11}{@{}l}{\textit{Per-scene NeRF}} \\
+    NeRF~\citep{mildenhall2020nerf}             & ECCV'20    & 31.01 & 0.947 & 0.081 & 26.50 & 0.811 & 0.250 & -- & -- & -- \\
+    Mip-NeRF~\citep{barron2021mipnerf}          & ICCV'21    & 33.09 & 0.961 & 0.043 & 26.70 & 0.829 & 0.177 & -- & -- & -- \\
+    TensoRF~\citep{chen2022tensorf}             & ECCV'22    & 33.14 & 0.963 & 0.047 & 26.73 & 0.839 & 0.204 & -- & -- & -- \\
+    Instant-NGP~\citep{muller2022instant}       & TOG'22     & 33.18 & 0.963 & 0.037 & 25.59 & 0.817 & 0.224 & -- & -- & -- \\
+    Mip-NeRF360~\citep{barron2022mipnerf360}    & CVPR'22    & --    & --    & --    & 29.40 & 0.901 & 0.127 & 29.40 & 0.840 & 0.204 \\
+    Zip-NeRF~\citep{barron2023zipnerf}          & ICCV'23    & --    & --    & --    & 30.38 & 0.921 & 0.100 & 30.38 & 0.866 & 0.179 \\
+    \midrule
+    \multicolumn{11}{@{}l}{\textit{Per-scene 3DGS}} \\
+    3DGS~\citep{kerbl2023gaussian}              & TOG'23     & 33.32 & 0.963 & 0.044 & 27.21 & 0.815 & 0.183 & 27.21 & 0.815 & 0.183 \\
+    Mip-Splatting~\citep{yu2024mipsplatting}    & CVPR'24    & 34.66 & 0.973 & 0.019 & 27.79 & 0.827 & 0.163 & 27.92 & 0.842 & 0.158 \\
+    Scaffold-GS~\citep{lu2023scaffoldgs}        & CVPR'24    & 33.56 & 0.966 & 0.033 & 27.63 & 0.827 & 0.176 & 27.71 & 0.831 & 0.171 \\
+    2DGS~\citep{huang2024_2dgs}                 & SIGGRAPH'24& 33.35 & 0.965 & 0.042 & 26.94 & 0.818 & 0.212 & -- & -- & -- \\
+    \midrule
+    \multicolumn{11}{@{}l}{\textit{Generalizable (no per-scene training)$\dagger$}} \\
+    pixelNeRF~\citep{yu2021pixelnerf}           & CVPR'21    & 23.17 & 0.860 & 0.170 & -- & -- & -- & -- & -- & -- \\
+    IBRNet~\citep{wang2021ibrnet}               & CVPR'21    & 26.73 & 0.917 & 0.091 & 26.73 & 0.851 & 0.176 & -- & -- & -- \\
+    MVSNeRF~\citep{chen2021mvsnerf}             & ICCV'21    & 26.63 & 0.931 & 0.168 & 26.40 & 0.839 & 0.181 & -- & -- & -- \\
+    pixelSplat~\citep{charatan2024pixelsplat}   & CVPR'24    & -- & -- & -- & 26.31 & 0.815 & 0.200 & -- & -- & -- \\
+    MVSplat~\citep{chen2024mvsplat}             & ECCV'24    & -- & -- & -- & 26.40 & 0.823 & 0.188 & -- & -- & -- \\
     \bottomrule
   \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Video and World Modelling Metrics}
 
@@ -2711,6 +2774,11 @@ InSpatio-WorldFM: An open-source real-time generative frame model.
 \emph{arXiv}, 2025.
 
 % ── Additional references for v0.5 quality pass ────────────────────────────
+
+\bibitem{geiger2013kitti}
+A.~Geiger, P.~Lenz, C.~Stiller, and R.~Urtasun.
+Vision meets robotics: The KITTI dataset.
+\emph{International Journal of Robotics Research}, 32(11):1231--1237, 2013.
 
 \bibitem{kajiya1984ray}
 J.~T.~Kajiya and B.~P.~Von~Herzen.
