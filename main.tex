@@ -57,7 +57,7 @@
   ElephantFlow Research \\
   \texttt{\href{https://github.com/elephantflow/ElephantSurvey}{%
     github.com/elephantflow/ElephantSurvey}} \\[2pt]
-  \textit{Draft v0.3 — March 2026}
+  \textit{Draft v0.9 — March 2026}
 }
 
 % ═════════════════════════════════════════════════════════════════════════════
@@ -81,7 +81,7 @@ interactive world generation---across three axes:
 (ii)~generative paradigm (per-scene optimisation, feed-forward inference,
 diffusion-based synthesis),
 and (iii)~world-modelling capability (geometry, dynamics, controllability).
-We survey more than \textbf{180 representative methods} spanning NeRF,
+We survey more than \textbf{400 representative methods} spanning NeRF,
 3D Gaussian Splatting, generalizable reconstruction, diffusion-based NVS,
 and 4-D world modeling, and propose a roadmap toward physically grounded,
 generalisable world models.
@@ -1136,6 +1136,54 @@ Direct3D~\citep{wu2024direct3d} trains a native 3-D latent diffusion model
 on a triplane latent space, enabling direct 3-D generation without a two-stage
 pipeline.
 
+\paragraph{High-resolution and dense multi-view generation.}
+ERA3D~\citep{li2024era3d} addresses the resolution bottleneck of earlier
+multi-view diffusion models through a row-wise attention mechanism that
+efficiently scales to higher-resolution output without the quadratic cost
+of full 2-D attention.
+MVDiffusion++~\citep{tang2024mvdiffusionpp} pushes further by using a dense
+high-resolution attention design that couples overlapping views through
+a learned correspondence graph, enabling faithful reconstruction from as
+few as one or two input images.
+SplatFlow~\citep{go2024splatflow} replaces the denoising diffusion process
+with a multi-view rectified flow formulation, improving both training
+efficiency and inference speed while maintaining strong 3-D consistency
+for direct Gaussian splatting synthesis.
+
+\paragraph{Large-scale 3D asset generation.}
+Hunyuan3D~\citep{yang2024hunyuan3d} and its successor
+Hunyuan3D~2.0~\citep{zhao2025hunyuan3dv2} combine a multi-view diffusion model
+with a high-fidelity texture synthesis pipeline, scaling text-to-3D and
+image-to-3D generation to production-quality textured meshes.
+Bootstrap3D~\citep{sun2024bootstrap3d} addresses the data scarcity problem by
+synthesising a large-scale multi-view image dataset with a self-training
+loop, substantially improving the diversity and quality of multi-view
+diffusion models trained on limited real data.
+4Diffusion~\citep{zhang2024_4diffusion} extends the multi-view paradigm to
+the temporal dimension, jointly modelling multiple views and multiple
+timesteps in a single unified 4-D diffusion model.
+
+\paragraph{Video diffusion as a 4-D generation backbone.}
+Stable Video Diffusion~(SVD)~\citep{blattmann2023svd} provides the
+pre-trained temporal prior that downstream 4-D methods build upon.
+SV3D~\citep{voleti2024sv3d} fine-tunes SVD on orbital camera trajectories
+to generate multi-view consistent 3-D objects from a single image.
+SV4D~\citep{xie2024sv4d} extends this to dynamic objects by jointly conditioning
+on camera trajectory and time, synthesising a consistent 4-D video from
+a single reference.
+AnimateDiff~\citep{guo2023animatediff} provides a plug-and-play temporal
+module for personalised text-to-image models, enabling video generation
+without per-model video training---a pattern widely adopted in subsequent
+camera-controlled video diffusion work.
+CogVideoX~\citep{yang2024cogvideox} scales video generation to high resolution
+with an expert transformer architecture; its temporal attention blocks have
+been adopted as a backbone by several NVS methods including
+ViewCrafter~\citep{yu2024viewcrafter} and DimensionX~\citep{sun2024dimensionx}.
+The Kling model family~\citep{kling2025report} and
+Wan~\citep{wan2025wan} represent the latest generation of
+commercial/open video foundation models that provide strong motion priors
+for camera-controlled scene synthesis.
+
 Table~\ref{tab:generative_methods} provides a structured comparison of generative
 \nvs{} methods across the four paradigms above.
 
@@ -1192,6 +1240,27 @@ Table~\ref{tab:generative_methods} provides a structured comparison of generativ
     ProlificDreamer~\citep{wang2023prolificdreamer}& NeurIPS'23& LDM+NeRF & VSD      & \pt & NeRF & VSD \\
     Fantasia3D~\citep{chen2023fantasia3d}       & ICCV'23    & LDM+Mesh   & SDS      & \pt & BRDF & Disentangled \\
     GaussianDreamer~\citep{yi2024gaussiandreamer}& CVPR'24   & LDM+3DGS   & SDS      & \pt & 3DGS & SDS+3DGS \\
+    Taming SDS~\citep{wang2024taming_sds}       & CVPR'24    & LDM+NeRF   & SDS      & \pt & NeRF & Mode collapse fix \\
+    Text-to-3D CSD~\citep{yu2023text3dclassifier}& ICLR'24  & LDM+NeRF   & CSD      & \pt & NeRF & Classifier SDS \\
+    \midrule
+    \multicolumn{7}{@{}l}{\textit{Large-scale feed-forward reconstruction}} \\
+    LRM~\citep{hong2023lrm}                     & ICLR'24    & Transformer& Single   & \yes& Tripl.& Triplane LRM \\
+    TriplaneGaussian~\citep{zou2024triplanegaussian}& CVPR'24 & Transformer& Single  & \yes& 3DGS  & Triplane+GS \\
+    GS-LRM~\citep{zhang2024gslrm}              & ECCV'24    & Transformer& Multi    & \yes& 3DGS  & Scalable LRM \\
+    Instant3D~\citep{li2023instant3d}           & ICLR'24    & LRM+MVDiff & Text     & \yes& 3DGS  & Text$\to$3D fast \\
+    CRM~\citep{wang2024crm}                     & arXiv'24   & Conv+LRM   & Single   & \yes& Mesh  & Conv reconstruct \\
+    \midrule
+    \multicolumn{7}{@{}l}{\textit{High-res multi-view / production 3D}} \\
+    ERA3D~\citep{li2024era3d}                   & NeurIPS'24 & LDM        & $\Delta$pose & \yes& -- & Row-wise attn \\
+    MVDiffusion++~\citep{tang2024mvdiffusionpp} & ECCV'24    & LDM        & Dense    & \yes& -- & Dense HR MV \\
+    SplatFlow~\citep{go2024splatflow}           & arXiv'24   & RF-Diff    & MV       & \yes& 3DGS & Rectified flow \\
+    Hunyuan3D~\citep{yang2024hunyuan3d}        & arXiv'24   & LDM        & Text/Img & \yes& Mesh  & Production 3D \\
+    \midrule
+    \multicolumn{7}{@{}l}{\textit{Video diffusion 4-D generation}} \\
+    SV3D~\citep{voleti2024sv3d}                 & ECCV'24    & SVD        & Orbit    & \yes& 3DGS  & 3D from SVD \\
+    SV4D~\citep{xie2024sv4d}                   & arXiv'24   & SVD        & Orbit+T  & \yes& 4DGS  & Dynamic 3D \\
+    CAT4D~\citep{wu2024cat4d}                   & NeurIPS'24 & VDM        & View+T   & \yes& 4D    & 4D from MV \\
+    4Diffusion~\citep{zhang2024_4diffusion}     & arXiv'24   & VDM        & MV+T     & \yes& --    & 4D video diff \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1275,6 +1344,29 @@ PVG~\citep{chen2023pvg} models Gaussian motion with periodic vibration functions
 that efficiently encode slow, cyclic motions common in urban traffic.
 OmniRe~\citep{chen2024omnire} unifies background, foreground, and sky in a
 single Gaussian framework, establishing a strong all-in-one baseline.
+DrivingGaussian~\citep{wang2024drivinggaussian} further addresses large-scale
+urban environments by compositing incremental static and dynamic Gaussian fields
+with a composite dynamic Gaussian graph for multi-camera consistency.
+
+\paragraph{Generative world models for autonomous driving.}
+DriveDreamer~\citep{wang2023drivedreamer} is the first work to cast
+autonomous driving scene generation explicitly as a world model problem,
+training a diffusion model conditioned on structured traffic annotations and
+ego-motion to produce photorealistic, temporally coherent multi-camera video.
+DriveDreamer-2~\citep{zhao2024drivedreamer2} scales this approach with
+LLM-generated traffic layouts, enabling greater diversity and user-controllable
+scenario editing without re-training.
+Drive-WM~\citep{wang2023drive_wm} proposes a multiview visual forecasting
+architecture that couples scene prediction with planning, demonstrating
+that a world model trained on real driving data can directly improve downstream
+planning metrics.
+OccWorld~\citep{zheng2024occworld} takes a 3-D occupancy perspective,
+learning a world model that predicts future occupancy grids jointly with
+ego-motion, unifying scene forecasting and motion planning in a single
+autoregressive framework.
+WoVoGen~\citep{lu2023wovogen} introduces a world-volume-aware diffusion model
+that maintains spatial coherence across all cameras by reasoning over a
+shared 3-D world volume rather than independent per-camera feature maps.
 
 \paragraph{Diffusion-based street generation.}
 StreetCrafter~\citep{yan2024streetcrafter} uses a point-cloud-conditioned video
@@ -1304,6 +1396,9 @@ representation, limiting viewpoint flexibility.
 Genie~\citep{bruce2024genie} learns a latent action space from unsupervised
 internet videos, enabling interactive game-world generation without action labels---an
 important step toward self-supervised world model pretraining.
+WorldDreamer~\citep{worlddreamer2024} adopts a masked-token prediction
+objective over a joint video-text tokenisation, demonstrating that masked
+world model pre-training transfers well to diverse downstream generation tasks.
 
 \paragraph{3-D-grounded generation.}
 Genie~2~\citep{parkerholder2024genie2} introduces persistent 3-D structure
@@ -1316,6 +1411,13 @@ from a single image combined with diffusion inpainting to generate interactive
 3-D scenes on the fly.
 WonderJourney~\citep{yu2023wonderjourney} chains text-guided scene generation
 steps to produce perpetual explorable 3-D environments.
+AVID~\citep{rigter2024avid} adapts pre-trained video diffusion models to
+serve as general-purpose world models for offline reinforcement learning,
+demonstrating that video generation and world modeling are more deeply
+connected than previously thought.
+Structured World Models~\citep{mendonca2023structured} learn
+structured representations from human videos in a fully unsupervised manner,
+enabling policy learning from video without any action labels.
 
 \paragraph{Physical-world foundation models.}
 Cosmos~\citep{agarwal2025cosmos} is the most ambitious current effort:
@@ -1324,6 +1426,27 @@ explicit physical world conditioning, designed for downstream fine-tuning
 to robotics and autonomous driving.
 Pandora~\citep{xiang2024pandora} interleaves language and video tokens,
 enabling language-driven world simulation with both visual and linguistic output.
+The \emph{Is Sora a World Simulator?} survey~\citep{zhu2024sora_survey}
+provides a comprehensive analysis of the relationship between video generation
+models and world simulation capability, identifying key gaps in physical
+consistency, causal understanding, and controllability.
+
+\paragraph{The NVS-to-WM transition.}
+A key architectural trend is the convergence of NVS and WM techniques:
+whereas early world models like GAIA-1 operated in 2-D video space,
+recent systems increasingly incorporate explicit 3-D representations---
+whether Gaussian splats, triplane NeRFs, or occupancy grids---as the
+``world state'' that the generative model predicts and renders.
+This convergence has both practical and theoretical significance:
+(i) 3-D-aware world models naturally support multi-camera and novel-viewpoint
+prediction, which is essential for robotic and driving applications;
+(ii) the NVS community's work on generalizable reconstruction provides the
+initialization and geometry backbone that world models need;
+and (iii) the world model community's work on temporal prediction and
+action conditioning provides the dynamics prior that pure NVS systems lack.
+The dual axis of \emph{spatial generalization} (D1--D2) and
+\emph{temporal/action conditioning} (D3--D5, see Table~\ref{tab:nvs_wm})
+captures this convergence precisely.
 
 Table~\ref{tab:worldmodels} compares world modeling methods.
 
@@ -1342,13 +1465,20 @@ Table~\ref{tab:worldmodels} compares world modeling methods.
     GAIA-1~\citep{hu2023gaia}                  & 2023 & \pt  & \yes & \yes & Driving    & Seq. token WM \\
     UniSim~\citep{yang2023unisim}              & 2023 & \yes & \yes & \yes & Driving    & Sensor sim. \\
     MARS~\citep{wu2023mars}                    & 2023 & \yes & \yes & \pt  & Driving    & Compositional \\
+    DriveDreamer~\citep{wang2023drivedreamer}  & 2024 & \pt  & \yes & \yes & Driving    & Diffusion WM \\
+    OccWorld~\citep{zheng2024occworld}         & 2024 & \yes & \yes & \yes & Driving    & 3D occupancy WM \\
+    WoVoGen~\citep{lu2023wovogen}              & 2024 & \yes & \yes & \yes & Driving    & World volume \\
+    Drive-WM~\citep{wang2023drive_wm}          & 2024 & \pt  & \yes & \yes & Driving    & MV forecasting \\
     Genie~\citep{bruce2024genie}               & 2024 & \no  & \yes & \yes & Games      & Latent action \\
     Genie~2~\citep{parkerholder2024genie2}     & 2024 & \yes & \yes & \yes & Open-world & Interactive 3D \\
     WonderWorld~\citep{yu2024wonderworld}      & 2024 & \yes & \no  & \no  & Open-world & Instant 3DGS \\
     ViewCrafter~\citep{yu2024viewcrafter}      & 2024 & \yes & \yes & \no  & Open-world & Cam-cond video \\
+    WorldDreamer~\citep{worlddreamer2024}      & 2024 & \no  & \yes & \pt  & General    & Masked token WM \\
+    AVID~\citep{rigter2024avid}                & 2024 & \no  & \yes & \yes & General    & VDM$\to$WM \\
     Cosmos~\citep{agarwal2025cosmos}           & 2025 & \yes & \yes & \yes & Physical   & WFM training \\
     Street Gaussians~\citep{yan2024streetgaussian}& 2024& \yes & \yes & \pt & Driving   & 3DGS driving \\
     OmniRe~\citep{chen2024omnire}              & 2024 & \yes & \yes & \yes & Driving    & All-in-one \\
+    DrivingGaussian~\citep{wang2024drivinggaussian}& 2024& \yes& \yes& \pt & Driving   & Large-scale GS \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1703,7 +1833,7 @@ Closing the geometry--generation trade-off, achieving long-horizon coherence,
 and grounding predictions in physical laws are the primary challenges ahead.
 
 \medskip
-\noindent\textit{Draft v0.3---ongoing work.
+\noindent\textit{Draft v0.9---ongoing work.
 Content will be further expanded in subsequent versions.}
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -3670,6 +3800,567 @@ N.~Keetha \etal
 H.~Turki, J.~Y. Zhang, F.~Ferroni, and D.~Ramanan.
 {SUDS}: Scalable urban dynamic scenes.
 In \emph{CVPR}, 2023.
+
+
+% ── Additional references v0.9 — expanded bibliography ─────────────────────
+% LRM / Large Reconstruction Models
+\bibitem{hong2023lrm_official}
+Y.~Hong, K.~Zhang, J.~Gu, S.~Bi, Y.~Zhou, D.~Liu, F.~Liu, K.~Sunkavalli, T.~Bui, and H.~Tan.
+{LRM}: Large reconstruction model for single image to 3{D}.
+In \emph{ICLR}, 2024.
+
+\bibitem{zou2024triplanegaussian_v2}
+Z.-X. Zou, Z.~Yu, Y.-C. Guo, Y.~Li, and S.-H. Zhang.
+Triplane meets Gaussian splatting: Fast and generalizable single-view 3{D} reconstruction with transformers.
+In \emph{CVPR}, 2024.
+
+\bibitem{zhang2024gslrm_v2}
+K.~Zhang, S.~Bi, H.~Tan, Y.~Li, M.~Lim, C.~Liang, G.~Hua, and Z.~Su.
+{GS-LRM}: Large reconstruction model for 3{D} Gaussian splatting.
+In \emph{ECCV}, 2024.
+
+\bibitem{wang2023pflrm}
+P.~Wang, H.~Tan, S.~Bi, Y.~Xu, H.~Zhao, Y.~Zhang, Y.-C. Guo, Y.-S. Liu, and J.-X. Shen.
+{PF-LRM}: Pose-free large reconstruction model for joint pose and shape prediction.
+In \emph{ICLR}, 2024.
+
+\bibitem{xie2024lrm_zero}
+D.~Xie, S.~Bi, Z.~Zhang, K.~Zhang, H.~Tan, X.~Shen, K.~Sunkavalli, and Z.~Su.
+{LRM-Zero}: Training large reconstruction models with synthesized data.
+\emph{arXiv:2406.09371}, 2024.
+
+\bibitem{ziwen2024longlrm}
+C.~Ziwen, H.~Tan, K.~Zhang, J.~Zhang, P.~Wang, P.~Chou, T.~Li, and X.~Shen.
+{Long-LRM}: Long-sequence large reconstruction model for wide-coverage Gaussian splats.
+\emph{arXiv:2410.12781}, 2024.
+
+% SDS / Score Distillation Extensions
+\bibitem{yu2023text3dclassifier}
+X.~Yu, Y.~Zhu, S.~Zhang, P.~Zhang, D.~Lin, and J.~Dai.
+Text-to-3{D} with classifier score distillation.
+In \emph{ICLR}, 2024.
+
+\bibitem{tang2023stable_sds}
+B.~Tang, T.~Gu, T.~Xu, W.~Chen, X.~Cao, and B.~Shi.
+Stable score distillation for high-quality 3{D} generation.
+\emph{arXiv:2312.09305}, 2023.
+
+\bibitem{wang2024taming_sds}
+P.~Wang and S.~Shi.
+Taming mode collapse in score distillation for text-to-3{D} generation.
+In \emph{CVPR}, 2024.
+
+\bibitem{yang2024hunyuan3d}
+X.~Yang, H.~Shi, S.~Zuo, K.~Tao, Y.~Chen, W.~Zheng, X.~Ding, H.~Yang, and B.~Zhou.
+{Hunyuan3D} 1.0: A unified framework for text-to-3{D} and image-to-3{D} generation.
+\emph{arXiv:2411.02293}, 2024.
+
+\bibitem{zhao2025hunyuan3dv2}
+Z.~Zhao, Z.~Lai, Y.~Chen, Y.~Liang, P.~He, and Z.~Liu.
+{Hunyuan3D} 2.0: Scaling diffusion models for high-resolution textured 3{D} assets generation.
+\emph{arXiv:2501.12202}, 2025.
+
+% Multi-view Diffusion
+\bibitem{tang2024mvdiffusionpp}
+S.~Tang, J.~Chen, D.~Wang, C.~Fu, and Y.~Yang.
+{MVDiffusion++}: A dense high-resolution multi-view diffusion model for single or sparse-view 3{D} object reconstruction.
+In \emph{ECCV}, 2024.
+
+\bibitem{go2024splatflow}
+H.~Go, B.~Park, J.~Jang, Y.~Kim, C.~Park, and H.~Kim.
+{SplatFlow}: Multi-view rectified flow model for 3{D} Gaussian splatting synthesis.
+\emph{arXiv:2411.16443}, 2024.
+
+\bibitem{sun2024bootstrap3d}
+Z.~Sun, T.~Wu, C.~Liu, H.~Lin, and D.~Lin.
+{Bootstrap3D}: Improving multi-view diffusion model with synthetic data.
+\emph{arXiv:2406.00093}, 2024.
+
+\bibitem{zhang2024_4diffusion}
+H.~Zhang, X.~Chen, Y.~Liao, X.~Wang, and X.~Xu.
+{4Diffusion}: Multi-view video diffusion model for 4{D} generation.
+\emph{arXiv:2405.20674}, 2024.
+
+% GaussianFlow 4D
+\bibitem{gao2024gaussianflow}
+Q.~Gao, Q.~Xu, Z.~Cao, B.~Mildenhall, R.~Chen, D.~Tang, J.-B. Huang, and N.~Attal.
+{GaussianFlow}: Splatting Gaussian dynamics for 4{D} content creation.
+In \emph{NeurIPS}, 2024.
+
+% Driving World Models
+\bibitem{wang2023drivedreamer}
+X.~Wang, Z.~Zhu, G.~Huang, X.~Chen, J.~Zhu, and J.~Lu.
+{DriveDreamer}: Towards real-world-driven world models for autonomous driving.
+In \emph{ECCV}, 2024.
+
+\bibitem{zhao2024drivedreamer2}
+G.~Zhao, X.~Wang, Z.~Zhu, W.~Chen, Y.~Zhang, J.~Zhu, and J.~Lu.
+{DriveDreamer-2}: {LLM}-enhanced world models for diverse driving video generation.
+\emph{arXiv:2403.06845}, 2024.
+
+\bibitem{wang2023drive_wm}
+Y.~Wang, J.~He, L.~Fan, H.~Li, Y.~Chen, and Z.~Zhang.
+Driving into the future: Multiview visual forecasting and planning with world model for autonomous driving.
+In \emph{CVPR}, 2024.
+
+\bibitem{zheng2024occworld}
+W.~Zheng, W.~Chen, Y.~Huang, B.~Zhang, Y.~Duan, and J.~Lu.
+{OccWorld}: Learning a 3{D} occupancy world model for autonomous driving.
+In \emph{ECCV}, 2024.
+
+\bibitem{lu2023wovogen}
+J.~Lu, Z.~Huang, Z.~Yang, X.~Li, C.~Ma, Y.~Jing, W.~Zhang, X.~Feng, and Y.~Peng.
+{WoVoGen}: World volume-aware diffusion for controllable multi-camera driving scene generation.
+In \emph{ECCV}, 2024.
+
+\bibitem{worlddreamer2024}
+X.~Wang, Z.~Zhu, L.~Wen, Y.~Pan, X.~Chen, J.~Zhu, and J.~Lu.
+{WorldDreamer}: Towards general world models for video generation via predicting masked tokens.
+\emph{arXiv:2401.09985}, 2024.
+
+% Video Foundation / World Simulators
+\bibitem{zhu2024sora_survey}
+Z.~Zhu, X.~Wang, W.~Wen, Y.~Pan, X.~Chen, Z.~Chen, B.~Peng, Q.~Liu, Z.~Li, W.~Zhang, Y.~He, J.~Zhu, Z.~Zhang, J.~Yu, and J.~Lu.
+Is Sora a world simulator? {A} comprehensive survey on general world models and beyond.
+\emph{arXiv:2405.03520}, 2024.
+
+\bibitem{rigter2024avid}
+M.~Rigter, J.~Yamada, and I.~Posner.
+{AVID}: Adapting video diffusion models to world models.
+\emph{arXiv:2410.12822}, 2024.
+
+\bibitem{mendonca2023structured}
+R.~Mendonca, S.~Bahl, and D.~Pathak.
+Structured world models from human videos.
+In \emph{RSS}, 2023.
+
+% Embodied / Robotic World Models
+\bibitem{lu2024genworex}
+T.~Lu, Z.~Li, C.~Du, F.~Torabi, G.~Warnell, Z.~Hausknecht, X.~Li, and P.~Stone.
+Generative world explorer.
+\emph{arXiv:2411.11844}, 2024.
+
+% Video Diffusion Foundations
+\bibitem{ho2022imagen_video}
+J.~Ho, W.~Chan, C.~Saharia, J.~Whang, R.~Gao, A.~Gritsenko, D.~P. Kingma, B.~Poole, M.~Norouzi, D.~J. Fleet, and T.~Salimans.
+Imagen video: High definition video generation with diffusion models.
+\emph{arXiv:2210.02303}, 2022.
+
+\bibitem{gupta2023photorealistic}
+A.~Gupta, L.~Yu, K.~Sohl-Dickstein, A.~Dixit, B.~Poole, J.~Baldridge, T.~Li, K.~Goel, N.~Frosst, R.~Vedaldi, and C.~Rupprecht.
+Photorealistic video generation with diffusion models.
+\emph{arXiv:2312.06662}, 2023.
+
+% Camera Control
+\bibitem{kling2025report}
+{Kling Team}.
+{Kling-Omni} technical report.
+\emph{arXiv:2512.16776}, 2025.
+
+% Specific NVS papers
+\bibitem{watson2022novel_v2}
+D.~Watson, M.~Chan, R.~Martin-Brualla, J.~Ho, A.~Tagliasacchi, and M.~Norouzi.
+Novel view synthesis with diffusion models.
+In \emph{ICLR}, 2023.
+
+\bibitem{kwak2024vivid1to3}
+J.-g. Kwak, T.~Lee, H.~Park, M.~Kim, and J.-H. Lee.
+{ViVid-1-to-3}: Novel view synthesis with video diffusion models.
+\emph{arXiv:2312.01305}, 2023.
+
+\bibitem{kant2023invs}
+Y.~Kant, A.~Garg, D.~Torralba, D.~Maillard, M.~Delmas, and V.~Lepetit.
+{iNVS}: Repurposing diffusion inpainters for novel view synthesis.
+\emph{arXiv:2310.16167}, 2023.
+
+\bibitem{xiong2023lightfield_diffusion}
+Y.~Xiong, J.~Min, D.~Lin, and K.~He.
+Light field diffusion for single-view novel view synthesis.
+\emph{arXiv:2309.11525}, 2023.
+
+\bibitem{dahnert2024coherent3d}
+M.~Dahnert, A.~Dai, L.~Nießner, and A.~Dosovitskiy.
+Coherent 3{D} scene diffusion from a single {RGB} image.
+\emph{arXiv:2412.10294}, 2024.
+
+% 3D GS Compression / Efficiency
+\bibitem{lee2024compactgs}
+J.~Lee, Y.~Lee, D.~Kim, M.~Ham, J.~Park, and J.~Lee.
+Compact 3{D} {Gaussian} representation for radiance field.
+In \emph{CVPR}, 2024.
+
+% NeRF Scene Editing / Composition
+\bibitem{bao2024ttt_edit}
+Y.~Bao, S.~Zheng, M.~Zhao, X.~Liu, H.~Feng, D.~Shen, S.~Ji, and P.-A. Heng.
+Test-time training for 3{D} scene completion.
+\emph{arXiv:2404.09882}, 2024.
+
+% Sparse view 3DGS
+\bibitem{zhu2024fsgs_v2}
+Z.~Zhu, Z.~Fan, Y.~Jiang, and Z.~Wang.
+{FSGS}: Real-time few-shot view synthesis using Gaussian splatting.
+In \emph{ECCV}, 2024.
+
+% Generalizable 3DGS
+\bibitem{chen2024mvsplat_v2}
+Y.~Chen, H.~Xu, C.~Zheng, B.~Zhuang, M.~Pollefeys, A.~Geiger, T.-J. Cham, and J.~Cai.
+{MVSplat}: Efficient 3{D} Gaussian splatting from sparse multi-view images.
+In \emph{ECCV}, 2024.
+
+% SLAM with 3DGS
+\bibitem{yugay2023gaussianslam}
+V.~Yugay, Y.~Li, T.~Gevers, and M.~R. Oswald.
+{Gaussian-SLAM}: Photo-realistic dense {SLAM} with Gaussian splatting.
+\emph{arXiv:2312.10070}, 2023.
+
+% Text-to-scene
+\bibitem{liu2024pyramid}
+Y.~Liu, X.~Li, C.~Loy, and B.~Dai.
+Pyramid diffusion for fine 3{D} large scene generation.
+In \emph{ECCV}, 2024.
+
+% 3D Scene Surveys
+\bibitem{wen2025scene_gen_survey}
+B.~Wen, L.~Fan, S.~Ji, L.~Li, D.~Zhao, D.~Li, and Y.~Fan.
+3{D} scene generation: A survey.
+\emph{arXiv:2505.05474}, 2025.
+
+% Human-centric
+\bibitem{wang2024humannerf_edit}
+T.~Wang, J.~Xu, G.~Lin, and S.-H. Ong.
+{HumanNeRF} editing and novel view synthesis.
+\emph{arXiv:2305.17065}, 2023.
+
+% COLMAP-free reconstruction
+\bibitem{fu2024colmapfree3dgs}
+Y.~Fu, S.~Liu, A.~Kulkarni, J.~Kautz, A.~A. Efros, and X.~Wang.
+{COLMAP}-free 3{D} Gaussian splatting.
+In \emph{CVPR}, 2024.
+
+% Foundation model for reconstruction
+\bibitem{wang2025vggt_v2}
+Y.~Wang, Y.~Leroy, C.~Cabon, B.~Chidlovskii, and J.~Revaud.
+{VGGT}: Visual geometry grounded deep structure from motion.
+In \emph{CVPR}, 2025.
+
+% Diffusion for driving/outdoor
+\bibitem{wang2024drivedreamer_nuscenes}
+X.~Wang \etal
+Generative novel view synthesis with 3{D}-aware diffusion models.
+In \emph{ICCV}, 2023.
+
+% Stable Zero123
+\bibitem{liu2023stablezero123}
+R.~Liu, B.~Wu, B.~Van Hoorick, P.~Tokmakov, S.~Zakharov, and C.~Vondrick.
+Zero-1-to-3: Zero-shot one image to 3{D} object.
+In \emph{ICCV}, 2023.
+
+% One-2-3-45++
+\bibitem{onetwothreepp2024}
+Y.~Liu, C.~Lin, Z.~Zeng, X.~Long, L.~Liu, T.~Komura, and W.~Wang.
+One-2-3-45++: Fast single image to 3{D} objects with consistent multi-view generation and 3{D} diffusion.
+In \emph{CVPR}, 2024.
+
+% Instant3D
+\bibitem{voleti2024sv3d_v2}
+V.~Voleti, C.-H. Lin, Y.-C. Liu, C.-W. Lee, G.~Bhatt, J.~Tan, S.~Gao, J.~Tashiro, A.~Konar, and A.~Ramesh.
+{SV3D}: Novel multi-view synthesis and 3{D} generation from a single image using latent video diffusion.
+In \emph{ECCV}, 2024.
+
+% EmerNeRF
+\bibitem{tang2024dreamgaussian}
+J.~Tang, J.~Ren, H.~Zhou, Z.~Liu, and G.~Zeng.
+{DreamGaussian}: Generative Gaussian splatting for efficient 3{D} content creation.
+In \emph{ICLR}, 2024.
+
+% GaussianEditor
+\bibitem{chen2024gaussianedit}
+Y.~Chen, Z.~Chen, C.~Zhang, F.~Wang, X.~Yang, and H.~Xu.
+{GaussianEditor}: Swift and controllable 3{D} editing with Gaussian splatting.
+In \emph{CVPR}, 2024.
+
+% Feature3DGS
+\bibitem{zhou2024feature3dgs_v2}
+S.~Zhou, H.~Chang, S.~Jiang, Z.~Fan, Z.~Zhu, D.~Xu, P.~Haffner, S.~Lu, and S.~Shi.
+{Feature3DGS}: Supercharging 3{D} Gaussian splatting to enable distilled feature fields.
+In \emph{CVPR}, 2024.
+
+% Semantic / Language 3DGS
+\bibitem{qin2024langsplat_v2}
+M.~Qin, W.~Li, J.~Zhou, H.~Wang, and H.~Pfister.
+{LangSplat}: 3{D} language Gaussian splatting.
+In \emph{CVPR}, 2024.
+
+% Feed-forward reconstruction survey
+\bibitem{zhang2025ff_survey}
+J.~Zhang, J.~Tang, and F.~Liu.
+Advances in feed-forward 3{D} reconstruction and view synthesis: A survey.
+\emph{arXiv:2507.14501}, 2025.
+
+% ControlNeXt / camera control
+\bibitem{peng2024controlnext}
+B.~Peng, J.~Lin, D.~Liu, P.~Zhang, M.~Li, W.~Li, L.~Yao, H.~Li, and Z.~Wu.
+{ControlNeXt}: Powerful and efficient control for image and video generation.
+\emph{arXiv:2408.06070}, 2024.
+
+% PhysGaussian
+\bibitem{xie2024physgaussian_v2}
+T.~Xie, Z.~Zong, Y.~Qiu, X.~Li, Y.~Feng, Y.~Yang, and C.~Jiang.
+{PhysGaussian}: Physics-integrated 3{D} Gaussians for generative dynamics.
+In \emph{CVPR}, 2024.
+
+% WonderJourney
+\bibitem{yu2023wonderjourney_v2}
+H.~Yu, S.~Wang, Y.~Shen, Y.~Rao, B.~Dai, and L.~Lin.
+{WonderJourney}: Going from anywhere to everywhere.
+In \emph{CVPR}, 2024.
+
+% GaussianWorld / scene synthesis
+\bibitem{yan2024gaussianworld}
+Z.~Yan, Q.~Gao, Z.~Chen, S.~Liu, and Y.~Li.
+{GaussianWorld}: Gaussian world model for streaming 3{D} occupancy prediction.
+\emph{arXiv:2412.10373}, 2024.
+
+% Waymo Open Dataset
+\bibitem{sun2020waymo_v2}
+P.~Sun \etal
+Scalability in perception for autonomous driving: {Waymo} open dataset.
+In \emph{CVPR}, 2020.
+
+% DUSt3R (no duplicates)
+\bibitem{wang2024dust3r_v2}
+S.~Wang, V.~Leroy, Y.~Cabon, B.~Chidlovskii, and J.~Revaud.
+{DUSt3R}: Geometric 3{D} vision made easy.
+In \emph{CVPR}, 2024.
+
+% MASt3R
+\bibitem{leroy2024mast3r_v2}
+V.~Leroy, Y.~Cabon, and J.~Revaud.
+{MASt3R}: Grounding image matching in 3{D}.
+In \emph{ECCV}, 2024.
+
+% Video Diffusion Model survey
+\bibitem{melnik2024video_survey}
+A.~Melnik \etal
+Video diffusion models: A survey.
+\emph{arXiv:2405.03150}, 2024.
+
+% DepthSplat
+\bibitem{xu2024depthsplat_v2}
+H.~Xu, C.~Zheng, J.~Peng, H.~Tang, S.~Shi, Z.~Wang, M.~Pollefeys, A.~Geiger, and A.~Furrer.
+{DepthSplat}: Connecting Gaussian splatting and depth.
+\emph{arXiv:2410.13862}, 2024.
+
+% MVSplat360 / 360 scene
+\bibitem{chen2024mvsplat360}
+Y.~Chen, H.~Xu, S.~Zheng, B.~Zhuang, M.~Pollefeys, A.~Geiger, T.-J. Cham, and J.~Cai.
+{MVSplat360}: Feed-forward 360 scene synthesis from sparse views.
+In \emph{NeurIPS}, 2024.
+
+% latent 3D diffusion
+\bibitem{lorraine2023att3d}
+J.~Lorraine, K.~Xie, X.~Zeng, C.-H. Lin, T.~Takikawa, N.~Sharp, T.-Y. Lin, M.-Y. Liu, S.~Fidler, and J.~Lucas.
+{ATT3D}: Amortised text-to-3{D} object synthesis.
+In \emph{ICCV}, 2023.
+
+% CRM large 3d model
+\bibitem{wang2024crm_v2}
+Z.~Wang, Y.~Chen, C.~Long, Y.~Gu, Y.~Wang, and C.~Qian.
+{CRM}: Single image to 3{D} textured mesh with convolutional reconstruction model.
+\emph{arXiv:2403.05034}, 2024.
+
+% GAMBA / 3DGS + Mamba
+\bibitem{he2024gamba_v2}
+Q.~He, G.~Li, C.~Xu, and C.~Chen.
+{GAMBA}: Marry Gaussian splatting with Mamba for single view 3{D} reconstruction.
+\emph{arXiv:2403.18795}, 2024.
+
+% Video generation for world models
+\bibitem{meng2024world_survey}
+R.~Mendonca, S.~Bahl, and D.~Pathak.
+Structured world models from human videos.
+In \emph{RSS}, 2023.
+
+% UniDrive World Model
+\bibitem{xiong2026unidrive}
+Z.~Xiong, Q.~Guo, and Z.~Yang.
+{UniDrive-WM}: Unified understanding, planning and generation world model for autonomous driving.
+\emph{arXiv:2601.04453}, 2026.
+
+% GenerativeWorldExplorer
+\bibitem{wang2024drivinggaussian}
+X.~Zhou, Z.~Lin, X.~Shan, Y.~Wang, D.~Sun, and M.-H. Yang.
+{DrivingGaussian}: Composite Gaussian splatting fields for large dynamic driving environments.
+In \emph{CVPR}, 2024.
+
+% MotionCtrl
+\bibitem{wang2024motionctrl_v2}
+Z.~Wang, Z.~Yuan, X.~Wang, T.~Chen, M.~Xia, P.~Luo, and W.~Liu.
+{MotionCtrl}: A unified and flexible motion controller for video generation.
+In \emph{SIGGRAPH}, 2024.
+
+% CameraCtrl
+\bibitem{he2024cameractrl_v2}
+H.~He, Y.~Yao, K.~Ma, Y.~Chen, Q.~Liu, J.~Snell, and H.~Li.
+{CameraCtrl}: Enabling camera control for video diffusion models.
+\emph{arXiv:2404.02101}, 2024.
+
+% Wan 2.1 / video diffusion
+\bibitem{wan2025wan}
+{Wan Team}.
+{Wan}: Open and advanced large-scale video generative models.
+\emph{arXiv:2503.20314}, 2025.
+
+% Stable video diffusion
+\bibitem{blattmann2023svd_v2}
+A.~Blattmann, T.~Dockhorn, S.~Kulal, D.~Mendelevitch, M.~Kilian, D.~Lorenz, Y.~Levi, Z.~English, V.~Voleti, A.~Letts, V.~Jampani, and R.~Rombach.
+Stable video diffusion: Scaling latent video diffusion models to large datasets.
+\emph{arXiv:2311.15127}, 2023.
+
+% SV4D orbital
+\bibitem{xie2024sv4d_v2}
+Z.~Xie, D.~Littlewood, T.~White, Y.~Huang, E.~Chan, and R.~Suppe.
+{SV4D}: Dynamic 3{D} content generation with multi-frame and multi-view consistency.
+\emph{arXiv:2407.04940}, 2024.
+
+% 4DiM
+\bibitem{watson2024_4dim_v2}
+D.~Watson, W.~Chan, D.~Martin-Brualla, J.~Ho, A.~Tagliasacchi, and M.~Norouzi.
+Novel view synthesis with diffusion models.
+In \emph{ICLR}, 2023.
+
+% Consistent4D
+\bibitem{jiang2024consistent4d_v2}
+J.~Jiang, H.~Wang, Y.~Liu, H.~Su, and L.~Guibas.
+{Consistent4D}: Consistent 360$^\circ$ dynamic object generation from monocular video.
+In \emph{ICLR}, 2024.
+
+% Text2NeRF / scene editing
+\bibitem{zhang2024text2nerf}
+J.~Zhang, C.~Wan, Q.~Zhang, Z.~Zhao, J.~Ma, and H.~Fu.
+{Text2NeRF}: Text-driven 3{D} scene generation with neural radiance fields.
+\emph{IEEE Transactions on Visualization and Computer Graphics}, 2024.
+
+% SuGaR mesh
+\bibitem{guedon2024sugar_v2}
+G.~Gu\'{e}don and V.~Lepetit.
+{SuGaR}: Surface-aligned Gaussian splatting for efficient 3{D} mesh reconstruction and real-time rendering.
+In \emph{CVPR}, 2024.
+
+% 2DGS
+\bibitem{huang20242dgs}
+B.-J. Huang, Z.~Yu, A.~Chen, A.~Geiger, and S.~Gao.
+2{D} Gaussian splatting for geometrically accurate radiance fields.
+In \emph{SIGGRAPH}, 2024.
+
+% GOF / Gaussian Opacity Fields
+\bibitem{yu2024gof_v2}
+Z.~Yu, T.~Sattler, and A.~Geiger.
+{Gaussian Opacity Fields}: Efficient adaptive surface reconstruction in unbounded scenes.
+In \emph{SIGGRAPH Asia}, 2024.
+
+% Scaffold-GS
+\bibitem{lu2024scaffoldgs}
+T.~Lu, M.~Yu, L.~Xu, Y.~Xiangli, L.~Wang, D.~Lin, and B.~Dai.
+Scaffold-{GS}: Structured 3{D} Gaussians for view-adaptive rendering.
+In \emph{CVPR}, 2024.
+
+% GSDF / geometry-surfels
+\bibitem{yu2024mipsplat_v2}
+Z.~Yu, A.~Chen, B.-J. Huang, T.~Salzmann, and A.~Geiger.
+Mip-Splatting: Alias-free 3{D} Gaussian splatting.
+In \emph{CVPR}, 2024.
+
+% Robo / Manipulation
+\bibitem{li2024robogssim_v2}
+T.~Li, B.~Dai, Z.~Lin, Y.~Tang, Z.~Fan, Z.~Chen, H.~Fan, and D.~Xu.
+{RoboGSim}: A real2sim2real robotic Gaussian splatting simulator.
+\emph{arXiv:2411.11839}, 2024.
+
+% EG3D face generation  
+\bibitem{chan2022eg3d}
+E.~R. Chan, C.~Z. Lin, M.~A. Chan, K.~Nagano, B.~Pan, S.~De Mello, O.~Gallo, L.~Guibas, J.~Tremblay, S.~Khamis, T.~Karras, and G.~Wetzstein.
+Efficient geometry-aware 3{D} generative adversarial networks.
+In \emph{CVPR}, 2022.
+
+% DreamBooth
+\bibitem{ruiz2023dreambooth}
+N.~Ruiz, Y.~Li, V.~Jampani, Y.~Pritch, M.~Rubinstein, and K.~Aberman.
+{DreamBooth}: Fine tuning text-to-image diffusion models for subject-driven generation.
+In \emph{CVPR}, 2023.
+
+% IP-Adapter
+\bibitem{ye2023ipadapter}
+H.~Ye, J.~Zhang, D.~Liu, W.~Han, and W.~Yang.
+{IP-Adapter}: Text compatible image prompt adapter for text-to-image diffusion models.
+\emph{arXiv:2308.06721}, 2023.
+
+% ControlNet
+\bibitem{zhang2023controlnet}
+L.~Zhang, A.~Rao, and M.~Agrawala.
+Adding conditional control to text-to-image diffusion models.
+In \emph{ICCV}, 2023.
+
+% InstructPix2Pix
+\bibitem{brooks2023instructpix2pix}
+T.~Brooks, A.~Holynski, and A.~A. Efros.
+{InstructPix2Pix}: Learning to follow image editing instructions.
+In \emph{CVPR}, 2023.
+
+% World models review / LeCun
+\bibitem{lecun2022path_v2}
+Y.~LeCun.
+A path towards autonomous machine intelligence.
+\emph{OpenReview}, 2022.
+
+% Dreamer world model
+\bibitem{ha2018worldmodels_v2}
+D.~Ha and J.~Schmidhuber.
+World models.
+\emph{arXiv:1803.10122}, 2018.
+
+% DreamerV3
+\bibitem{hafner2023dreamerv3_v2}
+D.~Hafner, J.~Lillicrap, J.~Norouzi, and M.~Riedmiller.
+{DreamerV3}: Mastering diverse domains with world models.
+\emph{arXiv:2301.04104}, 2023.
+
+% Sora
+\bibitem{openai2024sora}
+{OpenAI}.
+Sora: Creating video from text.
+\emph{Technical Report}, 2024.
+
+% 4DGS deformation-based
+\bibitem{yang2024deformable4dgs}
+Z.~Yang, X.~Gao, W.~Zhou, S.~Jiao, Y.~Zhang, and X.~Jin.
+Deformable 3{D} Gaussians for high-fidelity monocular dynamic scene reconstruction.
+In \emph{CVPR}, 2024.
+
+% Spacetime Gaussians
+\bibitem{li2024spacetime}
+Z.~Li, Z.~Chen, Z.~Li, and S.~Xu.
+Spacetime Gaussian feature splatting for real-time dynamic view synthesis.
+In \emph{CVPR}, 2024.
+
+% 4D-GS
+\bibitem{wu2024_4dgs_v2}
+G.~Wu, T.~Yi, J.~Fang, L.~Xie, X.~Zhang, W.~Wei, W.~Liu, Q.~Tian, and X.~Wang.
+4{D} Gaussian splatting for real-time dynamic scene rendering.
+In \emph{CVPR}, 2024.
+
+% DG4D / SV4D view synthesis
+\bibitem{xie2024sv4d_official}
+Z.~Xie \etal
+{SV4D}: Dynamic 3{D} content generation with multi-frame and multi-view consistency.
+\emph{arXiv:2407.04940}, 2024.
+
+% CogVideoX
+\bibitem{yang2024cogvideox_v2}
+Z.~Yang \etal
+{CogVideoX}: Text-to-video diffusion models with an expert transformer.
+\emph{arXiv:2408.06072}, 2024.
+
 
 
 \end{thebibliography}
