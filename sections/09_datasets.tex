@@ -1,0 +1,102 @@
+\section{Datasets and Benchmarks}
+\label{sec:datasets}
+
+\subsection{Object-Level Datasets}
+
+\textbf{ShapeNet}~\citep{chang2015shapenet}: 51K 3-D CAD models; foundation for
+single-image reconstruction training.
+\textbf{Objaverse}~\citep{deitke2023objaverse}: 800K+ 3-D objects;
+enables LRM-scale training.
+\textbf{Objaverse-XL}~\citep{deitke2024objaversexl}: 10M+ 3-D assets.
+\textbf{Co3D}~\citep{reizenstein2021co3d}: 19K+ annotated per-category real video
+sequences for category-level NVS.
+\textbf{MVImgNet}~\citep{yu2023mvimgnet}: 238K multi-view real images across
+238 categories.
+
+\subsection{Static Scene Datasets}
+
+\textbf{NeRF-Synthetic}~\citep{mildenhall2020nerf}: 8 synthetic bounded objects.
+\textbf{LLFF}~\citep{mildenhall2019llff}: 8 forward-facing real scenes.
+\textbf{DTU}~\citep{jensen2014dtu}: 124 controlled MVS scenes.
+\textbf{Tanks and Temples}~\citep{knapitsch2017tanks}: large-scale indoor/outdoor.
+\textbf{Mip-NeRF~360}~\citep{barron2022mipnerf360}: 9 unbounded 360$^\circ$ scenes.
+\textbf{ScanNet}~\citep{dai2017scannet}: 1513 indoor RGB-D sequences.
+\textbf{ScanNet++}~\citep{yeshwanth2023scannetpp}: DSLR + iPhone high-resolution indoor.
+\textbf{RealEstate10K}~\citep{zhou2018stereoMagnification}: 10K real estate videos
+for generalizable NVS training.
+
+\subsection{Dynamic Scene Datasets}
+
+\textbf{D-NeRF}~\citep{pumarola2021dnerf}: 6 monocular synthetic dynamic objects.
+\textbf{HyperNeRF}~\citep{park2021hypernerf}: monocular topological changes.
+\textbf{NHR}~\citep{wu2020nhr}: multi-view human performance.
+\textbf{CMU Panoptic}~\citep{joo2015panoptic}: dense multi-view social activities.
+\textbf{Neu3D}~\citep{li2022neural3d}: multi-view dynamic human sequences.
+\textbf{iPhone Dataset}~\citep{guo2022neural}: casually-captured phone videos.
+
+\subsection{Autonomous Driving and Large-Scale}
+
+\textbf{Waymo Open}~\citep{sun2020waymo}: multi-camera + LiDAR driving.
+\textbf{nuScenes}~\citep{caesar2020nuscenes}: 360$^\circ$ driving + HD maps.
+\textbf{KITTI-360}~\citep{liao2022kitti360}: urban driving with panoptic labels.
+\textbf{Argoverse~2}~\citep{wilson2023argoverse2}: high-resolution 360$^\circ$ driving.
+\textbf{PandaSet}~\citep{xiao2021pandaset}: urban LiDAR+camera dataset.
+
+Table~\ref{tab:datasets} provides a structured comparison of key datasets.
+
+\begin{table*}[t]
+  \centering
+  \caption{NVS and world modeling datasets.
+    \textbf{Type}: RT=real, Syn=synthetic.
+    \textbf{Dyn.}: contains dynamic content.
+    \textbf{Depth}: provides ground-truth or LiDAR depth.
+    \textbf{Pose}: provides camera/LiDAR extrinsics.
+    \textbf{Sem.}: provides semantic / instance labels.
+    \textbf{Scale}: approximate number of scenes/objects/sequences.
+    \textbf{Primary use}: main application in the NVS literature.}
+  \label{tab:datasets}
+  \scriptsize
+  \setlength{\tabcolsep}{2.5pt}
+  \begin{tabular}{@{}llccccccp{3.5cm}@{}}
+    \toprule
+    \textbf{Dataset} & \textbf{Year} & \textbf{Type}
+      & \textbf{Dyn.} & \textbf{Depth} & \textbf{Pose}
+      & \textbf{Sem.} & \textbf{Scale}
+      & \textbf{Primary Use} \\
+    \midrule
+    \multicolumn{9}{@{}l}{\textit{Object-centric}} \\
+    ShapeNet~\citep{chang2015shapenet}               & 2015 & Syn & \no & \yes & \yes & \yes & 51K obj.   & Generative 3-D training \\
+    NeRF-Synthetic~\citep{mildenhall2020nerf}        & 2020 & Syn & \no & \yes & \yes & \no  & 8 obj.     & Per-scene NeRF evaluation \\
+    Co3Dv2~\citep{reizenstein2021co3d}               & 2021 & RT  & \pt & \no  & \yes & \yes & 19K seq.   & Category-level NVS \\
+    Objaverse~\citep{deitke2023objaverse}            & 2023 & Syn & \pt & \yes & \yes & \pt  & 800K obj.  & LRM / diffusion training \\
+    Objaverse-XL~\citep{deitke2024objaversexl}       & 2024 & Syn & \pt & \yes & \yes & \pt  & 10M+ obj.  & Large-scale 3-D pretraining \\
+    MVImgNet~\citep{yu2023mvimgnet}                  & 2023 & RT  & \no & \no  & \yes & \yes & 238K seq.  & Category generalizable NVS \\
+    \midrule
+    \multicolumn{9}{@{}l}{\textit{Static indoor / outdoor scenes}} \\
+    DTU~\citep{jensen2014dtu}                        & 2014 & RT  & \no & \yes & \yes & \no  & 124 scn.   & MVS / NVS evaluation \\
+    LLFF~\citep{mildenhall2019llff}                  & 2019 & RT  & \no & \no  & \yes & \no  & 8 scn.     & Forward-facing NeRF \\
+    Tanks\&Temples~\citep{knapitsch2017tanks}        & 2017 & RT  & \no & \yes & \yes & \no  & 14 scn.    & Large-scale reconstruction \\
+    Mip-NeRF360~\citep{barron2022mipnerf360}         & 2022 & RT  & \no & \no  & \yes & \no  & 9 scn.     & Unbounded 360$^\circ$ NVS \\
+    ScanNet~\citep{dai2017scannet}                   & 2017 & RT  & \no & \yes & \yes & \yes & 1513 seq.  & Indoor 3-D reconstruction \\
+    ScanNet++~\citep{yeshwanth2023scannetpp}         & 2023 & RT  & \no & \yes & \yes & \yes & 460 scn.   & Generalizable NVS, hi-res \\
+    RealEstate10K~\citep{zhou2018stereoMagnification}& 2018 & RT  & \no & \no  & \yes & \no  & 10K vid.   & Generalizable video NVS \\
+    \midrule
+    \multicolumn{9}{@{}l}{\textit{Dynamic scenes}} \\
+    D-NeRF~\citep{pumarola2021dnerf}                 & 2021 & Syn & \yes& \no  & \yes & \no  & 6 obj.     & Dynamic NeRF evaluation \\
+    HyperNeRF~\citep{park2021hypernerf}              & 2021 & RT  & \yes& \no  & \yes & \no  & 15 seq.    & Topological deformation \\
+    CMU Panoptic~\citep{joo2015panoptic}             & 2015 & RT  & \yes& \yes & \yes & \yes & 65 seq.    & Multi-view social activities \\
+    Neu3D~\citep{li2022neural3d}                     & 2022 & RT  & \yes& \no  & \yes & \no  & 6 seq.     & Multi-view human video NeRF \\
+    iPhone Dataset~\citep{guo2022neural}             & 2022 & RT  & \yes& \no  & \no  & \no  & 14 seq.    & Casually-captured dynamic NVS \\
+    \midrule
+    \multicolumn{9}{@{}l}{\textit{Autonomous driving \& large-scale}} \\
+    KITTI~\citep{geiger2013kitti}                    & 2013 & RT  & \yes& \yes & \yes & \yes & Urban      & Early driving benchmark \\
+    Waymo Open~\citep{sun2020waymo}                  & 2020 & RT  & \yes& \yes & \yes & \yes & 1000 seg.  & Driving sensor simulation \\
+    nuScenes~\citep{caesar2020nuscenes}              & 2020 & RT  & \yes& \pt  & \yes & \yes & 1000 scn.  & 360$^\circ$ driving world model \\
+    KITTI-360~\citep{liao2022kitti360}               & 2022 & RT  & \yes& \yes & \yes & \yes & Urban      & Urban scene NVS + panoptic \\
+    Argoverse~2~\citep{wilson2023argoverse2}         & 2023 & RT  & \yes& \yes & \yes & \yes & 1000 seq.  & High-res 360$^\circ$ driving \\
+    PandaSet~\citep{xiao2021pandaset}                & 2020 & RT  & \yes& \yes & \yes & \yes & 103 scn.   & LiDAR+camera NVS \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+% ─────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,90 @@
+\section{Evaluation Metrics and Protocols}
+\label{sec:eval}
+
+\subsection{Standard Image Quality Metrics}
+
+\textbf{PSNR} (peak signal-to-noise ratio): pixel-level fidelity.
+\textbf{SSIM}~\citep{wang2004ssim}: structural similarity.
+\textbf{LPIPS}~\citep{zhang2018lpips}: perceptual similarity via deep features;
+best correlated with human judgement.
+
+Table~\ref{tab:nerf_benchmark} shows representative benchmark results on
+NeRF-Synthetic and LLFF.
+
+\begin{table*}[t]
+  \centering
+  \caption{Quantitative NVS comparison on three standard benchmarks.
+    NeRF-Synthetic: bounded synthetic objects (8 scenes).
+    LLFF: real forward-facing scenes (8 scenes).
+    Mip-NeRF360: real unbounded 360$^\circ$ scenes (9 scenes).
+    Higher PSNR/SSIM and lower LPIPS are better.
+    ``--'' indicates not reported on that benchmark.
+    $\dagger$~denotes generalizable methods evaluated without per-scene fine-tuning.}
+  \label{tab:nerf_benchmark}
+  \scriptsize
+  \setlength{\tabcolsep}{2.8pt}
+  \begin{tabular}{@{}llccccccccc@{}}
+    \toprule
+    \multirow{2}{*}{\textbf{Method}} & \multirow{2}{*}{\textbf{Venue}}
+      & \multicolumn{3}{c}{\textbf{NeRF-Synthetic}}
+      & \multicolumn{3}{c}{\textbf{LLFF}}
+      & \multicolumn{3}{c}{\textbf{Mip-NeRF360}} \\
+    \cmidrule(lr){3-5}\cmidrule(lr){6-8}\cmidrule(lr){9-11}
+      & & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$
+        & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$
+        & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ \\
+    \midrule
+    \multicolumn{11}{@{}l}{\textit{Per-scene NeRF}} \\
+    NeRF~\citep{mildenhall2020nerf}             & ECCV'20    & 31.01 & 0.947 & 0.081 & 26.50 & 0.811 & 0.250 & -- & -- & -- \\
+    Mip-NeRF~\citep{barron2021mipnerf}          & ICCV'21    & 33.09 & 0.961 & 0.043 & 26.70 & 0.829 & 0.177 & -- & -- & -- \\
+    TensoRF~\citep{chen2022tensorf}             & ECCV'22    & 33.14 & 0.963 & 0.047 & 26.73 & 0.839 & 0.204 & -- & -- & -- \\
+    Instant-NGP~\citep{muller2022instant}       & TOG'22     & 33.18 & 0.963 & 0.037 & 25.59 & 0.817 & 0.224 & -- & -- & -- \\
+    Mip-NeRF360~\citep{barron2022mipnerf360}    & CVPR'22    & --    & --    & --    & 29.40 & 0.901 & 0.127 & 29.40 & 0.840 & 0.204 \\
+    Zip-NeRF~\citep{barron2023zipnerf}          & ICCV'23    & --    & --    & --    & 30.38 & 0.921 & 0.100 & 30.38 & 0.866 & 0.179 \\
+    \midrule
+    \multicolumn{11}{@{}l}{\textit{Per-scene 3DGS}} \\
+    3DGS~\citep{kerbl2023gaussian}              & TOG'23     & 33.32 & 0.963 & 0.044 & 27.21 & 0.815 & 0.183 & 27.21 & 0.815 & 0.183 \\
+    Mip-Splatting~\citep{yu2024mipsplatting}    & CVPR'24    & 34.66 & 0.973 & 0.019 & 27.79 & 0.827 & 0.163 & 27.92 & 0.842 & 0.158 \\
+    Scaffold-GS~\citep{lu2023scaffoldgs}        & CVPR'24    & 33.56 & 0.966 & 0.033 & 27.63 & 0.827 & 0.176 & 27.71 & 0.831 & 0.171 \\
+    2DGS~\citep{huang2024_2dgs}                 & SIGGRAPH'24& 33.35 & 0.965 & 0.042 & 26.94 & 0.818 & 0.212 & -- & -- & -- \\
+    \midrule
+    \multicolumn{11}{@{}l}{\textit{Generalizable (no per-scene training)$\dagger$}} \\
+    pixelNeRF~\citep{yu2021pixelnerf}           & CVPR'21    & 23.17 & 0.860 & 0.170 & -- & -- & -- & -- & -- & -- \\
+    IBRNet~\citep{wang2021ibrnet}               & CVPR'21    & 26.73 & 0.917 & 0.091 & 26.73 & 0.851 & 0.176 & -- & -- & -- \\
+    MVSNeRF~\citep{chen2021mvsnerf}             & ICCV'21    & 26.63 & 0.931 & 0.168 & 26.40 & 0.839 & 0.181 & -- & -- & -- \\
+    pixelSplat~\citep{charatan2024pixelsplat}   & CVPR'24    & -- & -- & -- & 26.31 & 0.815 & 0.200 & -- & -- & -- \\
+    MVSplat~\citep{chen2024mvsplat}             & ECCV'24    & -- & -- & -- & 26.40 & 0.823 & 0.188 & -- & -- & -- \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\subsection{Video and World Modelling Metrics}
+
+\textbf{FVD}~\citep{unterthiner2019fvd} (Fréchet Video Distance): distributional
+quality of generated video sequences.
+\textbf{FID}~\citep{heusel2017fid}: Fréchet Inception Distance for image quality.
+\textbf{Temporal consistency}: average cosine similarity of DINO features
+between consecutive frames.
+\textbf{Task-specific}: for driving, closed-loop collision rate, route completion,
+imitation gap; for robotics, task success rate.
+
+\subsection{Limitations of Current Evaluation}
+
+PSNR/SSIM penalise perceptually plausible but pixel-misaligned generations,
+especially under large viewpoint changes.
+FVD captures perceptual quality but not geometric accuracy.
+No existing benchmark jointly evaluates geometry, dynamics, action
+responsiveness, and physical plausibility.
+This evaluation gap is itself a major open problem.
+
+\paragraph{Towards systematic evaluation.}
+The work on Systematic Evaluation of NVS~\citep{chen2024sysnvs} provides
+a principled analysis of how existing benchmarks differ and proposes
+controlled evaluation protocols separating appearance and geometry quality.
+Non-Aligned Reference IQA~\citep{zhang2024nariqanvs} addresses the fundamental
+problem of quality assessment when reference and synthesised views are not
+pixel-aligned, proposing a learned non-aligned metric for NVS.
+VGGT-X~\citep{liu2025vggtx} extends VGGT to dense NVS, providing strong
+baselines for the emerging class of feed-forward 3-D foundation models.
+
+% ─────────────────────────────────────────────────────────────────────────────

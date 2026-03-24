@@ -1,0 +1,111 @@
+\section{Background and Unified Formulation}
+\label{sec:background}
+
+\subsection{Classical Image-Based Rendering}
+
+Before the neural era, \nvs{} was approached through
+\emph{image-based rendering}~(IBR)~\citep{mcmillan1995plenoptic,chen1993view,levoy1996light}.
+The foundational insight is that images directly encode light transport:
+sufficiently dense sampling of the plenoptic function~\citep{adelson1991plenoptic}
+permits view interpolation without reasoning about explicit 3-D geometry.
+
+Light Field Rendering~\citep{levoy1996light} and the Lumigraph~\citep{gortler1996lumigraph}
+parameterise the light field on a two-plane slab, enabling photo-realistic view
+interpolation within the captured light-field volume.
+View interpolation~\citep{chen1993view} warps and blends reference images
+using depth estimates, anticipating modern depth-based view synthesis.
+Unstructured Lumigraphs and view-dependent texture mapping~\citep{debevec1996modeling}
+relaxed capture requirements to unstructured camera sets.
+Structure from Motion~(SfM)~\citep{schoenberger2016sfm} and
+Multi-View Stereo~(MVS)~\citep{schonberger2016mvs} established the
+geometry-estimation pipeline that underlies all pose-conditioned \nvs{} to this day.
+
+The fundamental limitation of classical IBR is the requirement for
+\emph{dense} capture: interpolation quality degrades rapidly as target
+viewpoints move beyond the convex hull of the observed camera set.
+Furthermore, these methods produce no compact scene model---each novel view
+requires querying the full set of reference images at inference time.
+The desire for compact, generalisable scene representations drove the
+development of neural radiance fields.
+
+\subsection{Volume Rendering and NeRF}
+
+NeRF~\citep{mildenhall2020nerf} represents a scene as a continuous function
+$F_\theta:(\mathbf{x},\mathbf{d})\mapsto(\mathbf{c},\sigma)$, where
+$\mathbf{x}\in\mathbb{R}^3$ is a 3-D location and
+$\mathbf{d}\in\mathbb{S}^2$ a viewing direction.
+The expected colour of a ray $\mathbf{r}(s)=\mathbf{o}+s\mathbf{d}$ is
+computed via classical volume rendering~\citep{kajiya1984ray}:
+\begin{equation}
+  \hat{C}(\mathbf{r})=\int_{s_n}^{s_f} T(s)\,\sigma(\mathbf{r}(s))\,
+  \mathbf{c}(\mathbf{r}(s),\mathbf{d})\,\mathrm{d}s,
+  \quad T(s)=\exp\!\left(-\int_{s_n}^s\sigma(\mathbf{r}(u))\,\mathrm{d}u\right),
+  \label{eq:volrender}
+\end{equation}
+where $T(s)$ is the accumulated transmittance.
+$F_\theta$ is a position-encoded MLP~\citep{tancik2020fourier} trained by
+minimising $\|\hat{C}(\mathbf{r})-C(\mathbf{r})\|_2^2$ over all observed rays.
+Hierarchical stratified sampling decomposes the continuous integral into
+coarse and fine networks, concentrating samples near the visible surface.
+
+NeRF's key properties---implicit representation, continuous differentiability,
+and view-dependent appearance via directional encoding---made it transformative.
+Its central limitations are \emph{slow per-scene optimisation} (hours) and
+\emph{per-scene specificity} (no generalisation to unseen scenes), both of which
+the subsequent literature directly addressed.
+
+\subsection{Gaussian Splatting}
+
+3DGS~\citep{kerbl2023gaussian} represents a scene as $N$ anisotropic 3-D
+Gaussians $\{(\boldsymbol{\mu}_i, \boldsymbol{\Sigma}_i, \alpha_i,
+\mathbf{c}_i)\}_{i=1}^N$, where $\boldsymbol{\mu}_i$ is the centre,
+$\boldsymbol{\Sigma}_i$ the full covariance, $\alpha_i$ the opacity, and
+$\mathbf{c}_i$ a set of spherical-harmonic coefficients encoding
+view-dependent colour.
+Novel views are rendered by projecting each Gaussian to a 2-D splat and
+compositing front-to-back:
+\begin{equation}
+  \hat{C}=\sum_{i\in\mathcal{N}}\mathbf{c}_i\,\alpha_i\,\tilde{G}_i
+  \prod_{j<i}(1-\alpha_j\,\tilde{G}_j),
+  \label{eq:splatting}
+\end{equation}
+where $\tilde{G}_i$ denotes the 2-D projection of Gaussian~$i$.
+Training proceeds by differentiable rasterisation and minimisation of a
+combined $\ell_1$ and SSIM photometric loss.
+An \emph{adaptive densification} strategy clones under-reconstructed Gaussians
+and splits over-large ones, while pruning transparent or redundant primitives.
+
+3DGS achieves real-time rendering ($>$100\,fps at 1080p) with training times
+of tens of minutes---a dramatic improvement over NeRF.
+Its explicit, editable representation makes it attractive for downstream
+tasks in scene editing, simulation, and embodied AI.
+The primary limitations are \emph{higher memory footprint} (millions of Gaussians
+per scene) and \emph{limited surface quality} compared to SDF-based methods.
+A large subsequent literature has addressed both limitations.
+
+\subsection{Unified NVS and World Modeling Formulation}
+
+We formulate \nvs{} as a general function:
+\begin{equation}
+  \mathcal{M}_\theta:\bigl(\{\mathbf{I}_i,\boldsymbol{\pi}_i\}_{i=1}^n,\;
+  \boldsymbol{\pi}^*\bigr)\longrightarrow\hat{\mathbf{I}}^*,
+  \quad n\in[1,+\infty).
+  \label{eq:nvs}
+\end{equation}
+The world-modeling extension augments this with a time index $t$ and a
+sequence of agent actions $\mathbf{a}_{0:t}$:
+\begin{equation}
+  \mathcal{M}_\theta:\bigl(\{\mathbf{I}_i,\boldsymbol{\pi}_i\}_{i=1}^n,\;
+  \mathbf{a}_{0:t},\,t,\,\boldsymbol{\pi}^*\bigr)\longrightarrow\hat{\mathbf{I}}^*_t.
+  \label{eq:wm}
+\end{equation}
+Eq.~\eqref{eq:nvs} is the special case $t=0$, $\mathbf{a}=\varnothing$.
+A complete world model satisfying Eq.~\eqref{eq:wm} must fulfil five desiderata,
+which we use throughout the survey:
+\textbf{D1}~geometric consistency across viewpoints;
+\textbf{D2}~generalisation from sparse or single-image input;
+\textbf{D3}~dynamic scene modelling;
+\textbf{D4}~action conditioning;
+\textbf{D5}~physical plausibility.
+
+% ─────────────────────────────────────────────────────────────────────────────

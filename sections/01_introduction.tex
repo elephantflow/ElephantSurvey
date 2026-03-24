@@ -1,0 +1,200 @@
+\section{Introduction}
+\label{sec:intro}
+
+\subsection{The Fundamental Problem}
+
+Intelligence requires reasoning about the world beyond what is immediately
+visible.
+A self-driving vehicle must anticipate the scene around a blind corner;
+a robotic arm must predict how a grasped object will appear from the wrist
+camera after a planned motion; a surgeon must mentally reconstruct
+anatomy from a 2-D scan.
+In each case, the core operation is identical: \textbf{synthesising a
+plausible visual state at an unobserved vantage point}.
+
+This is the problem of \textbf{Novel View Synthesis~(\nvs)}.
+Formally, given a set of reference observations
+$\{\mathbf{I}_i, \boldsymbol{\pi}_i\}_{i=1}^{n}$ with known camera poses
+$\boldsymbol{\pi}_i$, the goal is to render a photo-realistic image
+$\hat{\mathbf{I}}$ at an arbitrary target pose $\boldsymbol{\pi}^{*}$,
+faithfully preserving 3-D geometry, surface appearance, and lighting.
+The problem is inherently ill-posed when $n$ is small or when the target
+pose is far from any reference: an infinite family of 3-D scenes
+is consistent with any finite set of 2-D projections.
+Resolving this ambiguity requires either dense capture (classical IBR) or
+a learned prior over the distribution of plausible scenes (modern neural
+and generative approaches).
+
+While \nvs{} was studied in the image-based rendering
+era~\citep{levoy1996light,mcmillan1995plenoptic,chen1993view,debevec1996modeling},
+the past six years have witnessed an extraordinary paradigm shift:
+NeRF~\citep{mildenhall2020nerf} demonstrated that a shallow MLP can represent
+complex scenes with view-dependent appearance by differentiably volume-rendering
+a continuous radiance field;
+3DGS~\citep{kerbl2023gaussian} showed that an explicit set of anisotropic
+Gaussians can render at real-time frame rates;
+and diffusion-based methods~\citep{liu2023zero1to3,poole2023dreamfusion,yu2024viewcrafter}
+have moved the frontier toward \emph{generalisable, generative} synthesis
+that requires as few as a single image---or even a text description---as input.
+
+\subsection{From NVS to World Modeling}
+
+We argue that this progression reflects a deeper conceptual shift:
+\textbf{\nvs{} is becoming the foundational spatial inference engine of
+Generative World Modeling}.
+
+\begin{quote}
+  \textbf{Working Definition~(World Model).}\quad
+  A \emph{Generative World Model} is a learned system that can predict the
+  visual (and optionally physical) state of a scene under arbitrary
+  conditions---including viewpoint changes, temporal evolution, and agent
+  interactions---in a manner that is \emph{geometrically consistent},
+  \emph{physically plausible}, and \emph{generalisable} to scenes and conditions
+  outside the training distribution.
+\end{quote}
+
+Under this definition, \nvs{} is the special case in which the only varying
+condition is camera pose.
+A full world model must additionally handle temporal dynamics~(D3),
+action conditioning~(D4), and physical plausibility~(D5).
+Crucially, \emph{spatial consistency enforced by \nvs{} is a necessary
+prerequisite}: a world model without geometric grounding is merely a video
+predictor---perceptually plausible in distribution but unreliable for tasks
+requiring precise spatial reasoning such as robot manipulation or navigation.
+
+Recent systems are actively closing this gap.
+Genie~2~\citep{parkerholder2024genie2} generates interactive 3-D environments
+from a single image; Cosmos~\citep{agarwal2025cosmos} trains world foundation
+models at internet scale; and ViewCrafter~\citep{yu2024viewcrafter} with
+StreetCrafter~\citep{yan2024streetcrafter} demonstrate that camera-controlled
+video generation is practical at high resolution.
+These developments reflect the field's convergence on a unified model that
+subsumes NVS, video generation, and world simulation.
+
+\subsection{Relationship to Prior Surveys}
+
+Table~\ref{tab:surveys} compares this work with the most closely related
+prior surveys.
+Tewari~\etal~\citep{tewari2022advances} and
+Gao~\etal~\citep{gao2022nerf_survey} focus on \nerf{} representations
+without addressing world modelling.
+Wu~\etal~\citep{wu2024recentGS} and
+Fei~\etal~\citep{fei2024gssurvey} cover 3DGS but not generative methods or 4-D.
+Chen~\etal~\citep{chen2024survey_drivingNVS} cover \nvs{} for autonomous driving
+but lack a world-modeling lens.
+To our knowledge, \textbf{no existing survey jointly covers all three paradigms
+(\nerf{}, \tgs{}, generative) through the unifying lens of Generative World
+Modeling}, nor proposes a continuous-spectrum taxonomy from static
+reconstruction to 4-D interactive generation.
+
+\begin{table}[t]
+  \centering
+  \caption{Comparison with related surveys.
+    \textbf{\checkmark}~covered;\; $\sim$~partially;\; --~not covered.}
+  \label{tab:surveys}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}lcccccccc@{}}
+    \toprule
+    \textbf{Survey} & \textbf{Year}
+      & \textbf{NeRF} & \textbf{3DGS} & \textbf{Generative}
+      & \textbf{Dynamic} & \textbf{Generalise}
+      & \textbf{4D/WM} & \textbf{Unified} \\
+    \midrule
+    Tewari~\etal~\citep{tewari2022advances}        & 2022 & \yes & \no  & \pt  & \pt & \pt & \no & \no \\
+    Gao~\etal~\citep{gao2022nerf_survey}            & 2022 & \yes & \no  & \no  & \pt & \no & \no & \no \\
+    Zhu~\etal~\citep{zhu2023survey_ibr}             & 2023 & \pt  & \no  & \no  & \no & \no & \no & \no \\
+    Wu~\etal~\citep{wu2024recentGS}                 & 2024 & \no  & \yes & \no  & \pt & \no & \no & \no \\
+    Fei~\etal~\citep{fei2024gssurvey}               & 2024 & \no  & \yes & \pt  & \pt & \no & \no & \no \\
+    Chen~\etal~\citep{chen2024survey_drivingNVS}    & 2024 & \pt  & \pt  & \no  & \yes& \no & \pt & \no \\
+    Zhang~\etal~\citep{zhang2025feedforward_survey} & 2025 & \pt  & \pt  & \no  & \no & \yes& \no & \no \\
+    He~\etal~\citep{he2025gs_apps}                  & 2025 & \no  & \yes & \pt  & \pt & \no & \no & \no \\
+    \textbf{Ours}                                   & 2026 & \yes & \yes & \yes & \yes& \yes& \yes& \yes\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{The Unified Spectrum}
+
+We organise all methods along a \emph{continuous spectrum} defined by three axes
+(Figure~\ref{fig:spectrum}):
+
+\begin{enumerate}[leftmargin=*,label=\textbf{Axis~\arabic*.}]
+  \item \textbf{Input regime}: dense multi-view $\to$ sparse-view $\to$
+        single image $\to$ text/unconditional.
+  \item \textbf{Temporal scope}: static scene $\to$ deformable/dynamic $\to$
+        4-D world generation.
+  \item \textbf{Controllability}: viewpoint only $\to$ viewpoint~+~time $\to$
+        viewpoint~+~time~+~action.
+\end{enumerate}
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}[
+      method/.style={font=\tiny,align=center,inner sep=2pt},
+    ]
+    \draw[-{Stealth},thick] (0,0)--(9.2,0)
+      node[right,font=\small]{Input: dense $\to$ sparse $\to$ text};
+    \draw[-{Stealth},thick] (0,0)--(0,5.4)
+      node[above,font=\small]{Temporal: static $\to$ dynamic $\to$ 4D};
+
+    \fill[blue!6,rounded corners=3pt]   (0.1,0.1) rectangle (3.0,2.0);
+    \fill[purple!6,rounded corners=3pt] (0.1,2.1) rectangle (4.5,4.0);
+    \fill[orange!7,rounded corners=3pt] (3.1,0.1) rectangle (8.9,4.0);
+    \fill[red!8,rounded corners=3pt]    (4.6,3.1) rectangle (8.9,5.2);
+
+    \node[font=\tiny\bfseries,text=blue!60]   at (1.5,1.8) {Classical/NeRF};
+    \node[font=\tiny\bfseries,text=purple!70] at (2.3,3.8) {Dynamic NeRF/4DGS};
+    \node[font=\tiny\bfseries,text=orange!70] at (5.8,0.5) {Generalizable/Generative NVS};
+    \node[font=\tiny\bfseries,text=red!70]    at (7.0,5.0) {4D World Models};
+
+    \node[method] at (0.9,0.9)  {NeRF};
+    \node[method] at (2.0,1.4)  {3DGS};
+    \node[method] at (1.5,0.5)  {Instant-NGP};
+    \node[method] at (2.8,1.0)  {Mip-NeRF360};
+    \node[method] at (0.7,3.0)  {D-NeRF};
+    \node[method] at (2.2,3.4)  {4DGS};
+    \node[method] at (1.5,2.5)  {Nerfies};
+    \node[method] at (3.5,0.9)  {pixelNeRF\\IBRNet};
+    \node[method] at (4.8,1.5)  {pixelSplat\\MVSplat};
+    \node[method] at (5.8,2.2)  {DUSt3R\\MASt3R};
+    \node[method] at (6.5,1.0)  {Zero-1-to-3\\SyncDreamer};
+    \node[method] at (7.8,1.6)  {DreamFusion\\GaussianDreamer};
+    \node[method] at (8.2,0.6)  {LRM\\TriplaneGaussian};
+    \node[method] at (5.2,3.7)  {ViewCrafter};
+    \node[method] at (6.8,4.5)  {Genie2\\Cosmos};
+    \node[method] at (8.0,3.8)  {GAIA-1\\UniSim};
+
+    \draw[-{Stealth[length=9pt]},dashed,thick,red!60]
+      (1.5,1.5)--(7.5,4.4)
+      node[midway,above,sloped,font=\scriptsize\bfseries,red!70]
+        {$\to$ Generative World Modeling};
+  \end{tikzpicture}
+  \caption{The unified NVS spectrum. The diagonal arrow marks the evolutionary
+    trajectory toward 4-D Generative World Modeling.}
+  \label{fig:spectrum}
+\end{figure}
+
+\subsection{Contributions and Paper Structure}
+
+\textbf{Contributions:}
+(1)~A unified continuous-spectrum taxonomy across three axes (input regime,
+temporal scope, controllability);
+(2)~Cross-paradigm coverage of $>$180 methods with explicit World Modeling
+implications in each chapter;
+(3)~A related-survey gap analysis (Table~\ref{tab:surveys}) substantiating
+the novelty of the World Modeling lens;
+(4)~A five-direction open-problems roadmap.
+
+The remainder is organised as follows.
+\S\ref{sec:background} establishes background and a unified formulation.
+\S\ref{sec:nerf}--\ref{sec:generalisable} survey the three representation
+paradigms (NeRF, 3DGS, feed-forward reconstruction).
+\S\ref{sec:generative} covers generative \nvs{} with particular depth on
+camera-controlled diffusion.
+\S\ref{sec:world} examines 4-D generation, neural driving simulators, and
+world foundation models.
+\S\ref{sec:datasets}--\ref{sec:eval} review datasets and evaluation protocols.
+\S\ref{sec:open} proposes a research roadmap.
+
+% ─────────────────────────────────────────────────────────────────────────────
