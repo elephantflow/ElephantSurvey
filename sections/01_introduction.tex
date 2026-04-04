@@ -43,8 +43,11 @@ fundamentally decoupling scene understanding from dense observation.
 \subsection{From NVS to World Modeling}
 
 We argue that this progression reflects a deeper conceptual shift:
-\textbf{\nvs{} is becoming the foundational spatial inference engine of
+\textbf{\nvs{} can be viewed as a key spatial inference capability underlying
 Generative World Modeling}.
+
+\paragraph{Scope.}
+This survey focuses on the \emph{visual-generative} branch of world modeling, where geometry, viewpoint consistency, and scene simulation are central. It does not aim to comprehensively cover latent dynamics models, model-based reinforcement learning, or planning-centric world model architectures. Within this scope, \nvs{} captures geometric state prediction under observer motion, but does not by itself solve object-centric dynamics, action consequences, or physical causality---capabilities addressed as the frontier in Sections~\ref{sec:world} and~\ref{sec:open}.
 
 \begin{quote}
   \textbf{Working Definition~(World Model).}\quad
@@ -64,9 +67,10 @@ Crucially, \emph{spatial consistency enforced by \nvs{} is a necessary
 prerequisite}: a world model without geometric grounding is merely a video
 predictor---perceptually plausible in distribution but unreliable for tasks
 requiring precise spatial reasoning such as robot manipulation or navigation.
-This observation motivates our central thesis: the capabilities developed by
-the NVS community are not merely ancillary to world modeling---they constitute
-its essential geometric backbone.
+This observation motivates the organizing perspective of this survey: the capabilities developed by
+the NVS community provide essential geometric building blocks for visual-generative world modeling,
+even as full world modeling additionally requires physical causality, object-centric dynamics, and
+action-conditioned planning that NVS alone does not address.
 
 Recent systems are actively closing this gap.
 Genie~2~\citep{parkerholder2024genie2} generates interactive 3-D environments
@@ -74,7 +78,7 @@ from a single image; Cosmos~\citep{agarwal2025cosmos} trains world foundation
 models at internet scale; and ViewCrafter~\citep{yu2024viewcrafter} with
 StreetCrafter~\citep{yan2024streetcrafter} demonstrate that camera-controlled
 video generation is practical at high resolution.
-These developments reflect the field's convergence on a unified model that
+These developments suggest an emerging trend toward a more unified model that
 subsumes NVS, video generation, and world simulation into a single
 architecture trained at scale.
 
@@ -125,7 +129,7 @@ trajectory rather than a collection of independently evolving sub-communities.
 
 \subsection{The Unified Spectrum}
 
-We organise all methods along a \emph{continuous spectrum} defined by three axes
+We organise all methods along a \emph{conceptual map} defined by three axes
 (Figure~\ref{fig:spectrum}):
 
 \begin{enumerate}[leftmargin=*,label=\textbf{Axis~\arabic*.}]
@@ -137,10 +141,9 @@ We organise all methods along a \emph{continuous spectrum} defined by three axes
         viewpoint~+~time~+~action.
 \end{enumerate}
 
-This spectrum is not merely a taxonomic device: it encodes a genuine research
-frontier along which the field has progressed.
+This conceptual map is an organizing lens rather than a claim about a single unified research trajectory: methods nearby in the figure need not be optimized for the same task, trained on the same data distribution, or evaluated under comparable protocols. Nevertheless, the map makes explicit which world-modeling capabilities each method addresses and which it leaves open.
 Methods near the origin of the spectrum---dense multi-view static reconstruction---are
-largely solved, with current systems approaching photorealism within minutes of
+comparatively mature under controlled benchmarks, with current systems approaching photorealism within minutes of
 training.
 The open problems cluster at the far end: sparse-input, temporally extended,
 action-conditioned generation that generalises to arbitrary scenes.
@@ -190,7 +193,7 @@ which it leaves open.
       node[midway,above,sloped,font=\scriptsize\bfseries,red!70]
         {$\to$ Generative World Modeling};
   \end{tikzpicture}
-  \caption{The unified NVS spectrum. The diagonal arrow marks the evolutionary
+  \caption{A conceptual map of the NVS landscape. The diagonal arrow marks the evolutionary
     trajectory toward 4-D Generative World Modeling.}
   \label{fig:spectrum}
 \end{figure}

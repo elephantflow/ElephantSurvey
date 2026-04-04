@@ -1,6 +1,14 @@
 \section{Towards Generative World Modeling}
 \label{sec:world}
 
+\paragraph{Scope and capability tiers.}
+The following discussion focuses on the \emph{visual-generative} branch of world modeling. Methods primarily targeting latent dynamics prediction, model-based reinforcement learning, or planning-centric simulation fall outside our primary scope. Within this scope, we distinguish three capability tiers:
+\begin{itemize}
+  \item \textbf{Direct world-model instantiations}: methods performing explicit rollout, action-conditioned prediction, or closed-loop simulation (\emph{e.g.}, Genie~2, Cosmos, GAIA-1, UniSim).
+  \item \textbf{Bridging methods}: methods connecting 3-D generation with temporal or action-conditioned generation (\emph{e.g.}, ViewCrafter, CAT4D, StreetCrafter).
+  \item \textbf{Enabling components}: methods providing geometry, reconstruction, multi-view consistency, or generative priors that world models depend on (\emph{e.g.}, DUSt3R, LRM, Zero-1-to-3, DreamFusion).
+\end{itemize}
+
 The preceding sections have charted the evolution of \nvs{} from per-scene
 NeRF reconstruction to generative, feed-forward synthesis from a single image.
 We now address the central thesis of this survey: how does this progression
@@ -13,10 +21,7 @@ the world given a current state and an action.
 Applied to visual, spatial environments, this translates to predicting the
 \emph{visual experience} of an agent as it moves through and interacts with
 a scene.
-The key insight of this survey is that \emph{novel view synthesis is already
-a minimal world model for the camera-action case}: it predicts future visual
-states under camera motion, enforcing geometric consistency without explicit
-physics.
+One organizing perspective of this survey is that \nvs{} \emph{can be viewed as capturing a restricted special case of world modeling}: it predicts future visual states under camera motion, enforcing geometric consistency without explicit physics. Crucially, this framing has important limits---\nvs{} does not by itself solve object-centric dynamics, action consequences, or physical causality, which remain open challenges addressed in Section~\ref{sec:open}.
 The challenge is to extend this capability along three additional axes:
 temporal dynamics that extend beyond the current frame,
 agent actions that are richer than camera transforms,
