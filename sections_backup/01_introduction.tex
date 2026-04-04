@@ -27,18 +27,15 @@ and generative approaches).
 
 While \nvs{} was studied in the image-based rendering
 era~\citep{levoy1996light,mcmillan1995plenoptic,chen1993view,debevec1996modeling},
-the past six years have witnessed an extraordinary paradigm shift.
+the past six years have witnessed an extraordinary paradigm shift:
 NeRF~\citep{mildenhall2020nerf} demonstrated that a shallow MLP can represent
 complex scenes with view-dependent appearance by differentiably volume-rendering
-a continuous radiance field, establishing that neural representations could
-faithfully encode scene geometry and appearance from posed photographs alone.
-3DGS~\citep{kerbl2023gaussian} subsequently showed that an explicit set of
-anisotropic Gaussians can render at real-time frame rates, resolving the
-speed bottleneck that had limited NeRF's practical applicability.
-Most recently, diffusion-based methods~\citep{liu2023zero1to3,poole2023dreamfusion,yu2024viewcrafter}
+a continuous radiance field;
+3DGS~\citep{kerbl2023gaussian} showed that an explicit set of anisotropic
+Gaussians can render at real-time frame rates;
+and diffusion-based methods~\citep{liu2023zero1to3,poole2023dreamfusion,yu2024viewcrafter}
 have moved the frontier toward \emph{generalisable, generative} synthesis
-that requires as few as a single image---or even a text description---as input,
-fundamentally decoupling scene understanding from dense observation.
+that requires as few as a single image---or even a text description---as input.
 
 \subsection{From NVS to World Modeling}
 
@@ -64,9 +61,6 @@ Crucially, \emph{spatial consistency enforced by \nvs{} is a necessary
 prerequisite}: a world model without geometric grounding is merely a video
 predictor---perceptually plausible in distribution but unreliable for tasks
 requiring precise spatial reasoning such as robot manipulation or navigation.
-This observation motivates our central thesis: the capabilities developed by
-the NVS community are not merely ancillary to world modeling---they constitute
-its essential geometric backbone.
 
 Recent systems are actively closing this gap.
 Genie~2~\citep{parkerholder2024genie2} generates interactive 3-D environments
@@ -75,8 +69,7 @@ models at internet scale; and ViewCrafter~\citep{yu2024viewcrafter} with
 StreetCrafter~\citep{yan2024streetcrafter} demonstrate that camera-controlled
 video generation is practical at high resolution.
 These developments reflect the field's convergence on a unified model that
-subsumes NVS, video generation, and world simulation into a single
-architecture trained at scale.
+subsumes NVS, video generation, and world simulation.
 
 \subsection{Relationship to Prior Surveys}
 
@@ -93,8 +86,6 @@ To our knowledge, \textbf{no existing survey jointly covers all three paradigms
 (\nerf{}, \tgs{}, generative) through the unifying lens of Generative World
 Modeling}, nor proposes a continuous-spectrum taxonomy from static
 reconstruction to 4-D interactive generation.
-Our work fills this gap by treating the field as a single coherent research
-trajectory rather than a collection of independently evolving sub-communities.
 
 \begin{table}[t]
   \centering
@@ -136,17 +127,6 @@ We organise all methods along a \emph{continuous spectrum} defined by three axes
   \item \textbf{Controllability}: viewpoint only $\to$ viewpoint~+~time $\to$
         viewpoint~+~time~+~action.
 \end{enumerate}
-
-This spectrum is not merely a taxonomic device: it encodes a genuine research
-frontier along which the field has progressed.
-Methods near the origin of the spectrum---dense multi-view static reconstruction---are
-largely solved, with current systems approaching photorealism within minutes of
-training.
-The open problems cluster at the far end: sparse-input, temporally extended,
-action-conditioned generation that generalises to arbitrary scenes.
-By mapping every method we survey to a position on this spectrum, we make
-explicit which aspects of the world-modeling desiderata each addresses and
-which it leaves open.
 
 \begin{figure}[t]
   \centering

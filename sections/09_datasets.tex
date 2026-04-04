@@ -1,46 +1,133 @@
 \section{Datasets and Benchmarks}
 \label{sec:datasets}
 
+Empirical progress in \nvs{} and world modeling is inseparable from the
+availability of suitable datasets.
+A training or evaluation dataset defines the implicit scope of the problem:
+it determines which scene types, capture modalities, viewpoint distributions,
+and annotation types a method must handle.
+The field has developed a rich ecosystem of datasets spanning a wide range of
+domains---from controlled synthetic objects to urban driving sequences---and
+understanding their respective strengths and limitations is essential for
+interpreting benchmark results.
+We organise the dataset survey along four axes: object-centric datasets
+for single-image and multi-view reconstruction, static scene datasets for
+per-scene NeRF and 3DGS evaluation, dynamic scene datasets for temporal NVS,
+and large-scale autonomous driving datasets for neural scene simulation.
+Table~\ref{tab:datasets} at the end of this section provides a structured comparison.
+
 \subsection{Object-Level Datasets}
 
-\textbf{ShapeNet}~\citep{chang2015shapenet}: 51K 3-D CAD models; foundation for
-single-image reconstruction training.
-\textbf{Objaverse}~\citep{deitke2023objaverse}: 800K+ 3-D objects;
-enables LRM-scale training.
-\textbf{Objaverse-XL}~\citep{deitke2024objaversexl}: 10M+ 3-D assets.
-\textbf{Co3D}~\citep{reizenstein2021co3d}: 19K+ annotated per-category real video
-sequences for category-level NVS.
-\textbf{MVImgNet}~\citep{yu2023mvimgnet}: 238K multi-view real images across
-238 categories.
+Object-centric datasets are the foundation of the generative 3-D literature,
+because they provide clean, well-posed reconstruction problems with known
+geometry and camera parameters, enabling rigorous evaluation of single-image
+and sparse-view reconstruction methods.
+
+\textbf{ShapeNet}~\citep{chang2015shapenet} established the canonical benchmark
+for single-image 3-D reconstruction with its collection of 51K CAD models
+across 55 object categories.
+Its clean geometry and known cameras make it ideal for controlled evaluation,
+though the synthetic rendering distribution departs substantially from real-world
+photograph appearance.
+\textbf{Objaverse}~\citep{deitke2023objaverse} resolved the scale bottleneck
+by providing over 800K 3-D objects sourced from the internet, enabling the
+large-scale pretraining required by LRM-family methods that would overfit on
+ShapeNet's limited diversity.
+\textbf{Objaverse-XL}~\citep{deitke2024objaversexl} further scales to 10M+ assets,
+providing the data regime required by the next generation of foundation reconstruction models.
+\textbf{Co3D}~\citep{reizenstein2021co3d} provides 19K+ annotated per-category
+real video sequences, enabling evaluation of category-level NVS at a much higher
+realism than synthetic benchmarks; its structured train/test splits support
+rigorous evaluation of generalisation within and across categories.
+\textbf{MVImgNet}~\citep{yu2023mvimgnet} adds 238K multi-view real-image sequences
+across 238 categories, bridging the synthetic-to-real gap while maintaining
+the structured multi-view annotation needed for NVS evaluation.
 
 \subsection{Static Scene Datasets}
 
-\textbf{NeRF-Synthetic}~\citep{mildenhall2020nerf}: 8 synthetic bounded objects.
-\textbf{LLFF}~\citep{mildenhall2019llff}: 8 forward-facing real scenes.
-\textbf{DTU}~\citep{jensen2014dtu}: 124 controlled MVS scenes.
-\textbf{Tanks and Temples}~\citep{knapitsch2017tanks}: large-scale indoor/outdoor.
-\textbf{Mip-NeRF~360}~\citep{barron2022mipnerf360}: 9 unbounded 360$^\circ$ scenes.
-\textbf{ScanNet}~\citep{dai2017scannet}: 1513 indoor RGB-D sequences.
-\textbf{ScanNet++}~\citep{yeshwanth2023scannetpp}: DSLR + iPhone high-resolution indoor.
-\textbf{RealEstate10K}~\citep{zhou2018stereoMagnification}: 10K real estate videos
-for generalizable NVS training.
+Static scene datasets test the fidelity and generalisation of per-scene
+and generalisable NVS methods on real-world complexity, without the
+confounding factor of temporal dynamics.
+They span the full range of scene types encountered in practice, from
+controlled tabletop objects to unbounded outdoor environments.
+
+\textbf{NeRF-Synthetic}~\citep{mildenhall2020nerf} provides 8 synthetic
+bounded objects with known geometry and high-quality Blender renders, making it
+the canonical baseline for evaluating per-scene NeRF methods under controlled
+conditions.
+\textbf{LLFF}~\citep{mildenhall2019llff} provides 8 real forward-facing scenes
+captured with a handheld camera, testing methods' ability to handle real
+image noise, exposure variation, and limited view range.
+\textbf{DTU}~\citep{jensen2014dtu} offers 124 controlled multi-view stereo scenes
+with ground-truth point clouds, enabling combined NVS and geometry evaluation.
+\textbf{Tanks and Temples}~\citep{knapitsch2017tanks} provides large-scale
+indoor and outdoor scenes captured with professional cameras, testing scalability
+to scenes that are substantially larger and more complex than tabletop objects.
+\textbf{Mip-NeRF~360}~\citep{barron2022mipnerf360} is the current gold standard
+for unbounded 360$^\circ$ evaluation, with 9 scenes carefully selected to
+represent diverse outdoor and indoor environments with non-trivial background depth.
+\textbf{ScanNet}~\citep{dai2017scannet} provides 1513 indoor RGB-D sequences with
+semantic and instance labels, serving as the primary benchmark for indoor NVS
+methods that must handle the large viewpoint variation and partial occlusion
+typical of room-scale captures.
+\textbf{ScanNet++}~\citep{yeshwanth2023scannetpp} upgrades this to DSLR-quality
+imagery alongside iPhone captures, enabling evaluation of high-fidelity
+indoor NVS models.
+\textbf{RealEstate10K}~\citep{zhou2018stereoMagnification} provides 10K real
+estate walkthrough videos with estimated camera trajectories, serving as the
+primary training and evaluation set for generalisable video NVS methods
+that must handle large camera motions and diverse indoor scenes.
 
 \subsection{Dynamic Scene Datasets}
 
-\textbf{D-NeRF}~\citep{pumarola2021dnerf}: 6 monocular synthetic dynamic objects.
-\textbf{HyperNeRF}~\citep{park2021hypernerf}: monocular topological changes.
-\textbf{NHR}~\citep{wu2020nhr}: multi-view human performance.
-\textbf{CMU Panoptic}~\citep{joo2015panoptic}: dense multi-view social activities.
-\textbf{Neu3D}~\citep{li2022neural3d}: multi-view dynamic human sequences.
-\textbf{iPhone Dataset}~\citep{guo2022neural}: casually-captured phone videos.
+Dynamic scene datasets are essential for evaluating methods that target
+the temporal generalisation requirements of world modeling.
+They expose the additional challenges of large non-rigid deformation,
+occlusion handling under motion, and the depth-motion ambiguity that
+plagues monocular dynamic reconstruction.
+
+\textbf{D-NeRF}~\citep{pumarola2021dnerf} provides 6 monocular synthetic
+dynamic objects with known deformation fields, enabling quantitative
+evaluation of dynamic reconstruction methods under controlled conditions.
+\textbf{HyperNeRF}~\citep{park2021hypernerf} provides 15 real monocular sequences
+of objects undergoing topological changes (opening a noodle box, cutting a
+cucumber), testing methods' ability to represent topology-changing dynamics
+that smooth deformation fields cannot model.
+\textbf{NHR}~\citep{wu2020nhr} and \textbf{CMU Panoptic}~\citep{joo2015panoptic}
+provide multi-view captures of human performance, with Panoptic offering 65
+sequences of social activities from a dense 31-camera array---the richest
+multi-view human performance dataset publicly available.
+\textbf{Neu3D}~\citep{li2022neural3d} provides 6 high-quality multi-view
+human video sequences that have become the standard benchmark for
+multi-view dynamic NeRF evaluation.
+\textbf{iPhone Dataset}~\citep{guo2022neural} provides 14 casually-captured
+phone video sequences of dynamic scenes, testing methods' ability to handle
+the most challenging regime: monocular capture with arbitrary camera and
+scene motion.
 
 \subsection{Autonomous Driving and Large-Scale}
 
-\textbf{Waymo Open}~\citep{sun2020waymo}: multi-camera + LiDAR driving.
-\textbf{nuScenes}~\citep{caesar2020nuscenes}: 360$^\circ$ driving + HD maps.
-\textbf{KITTI-360}~\citep{liao2022kitti360}: urban driving with panoptic labels.
-\textbf{Argoverse~2}~\citep{wilson2023argoverse2}: high-resolution 360$^\circ$ driving.
-\textbf{PandaSet}~\citep{xiao2021pandaset}: urban LiDAR+camera dataset.
+Autonomous driving datasets provide the large-scale, sensor-rich captures
+needed to evaluate neural scene simulators and driving-domain world models.
+They are distinguished from the above categories by their multi-sensor
+modality (cameras plus LiDAR), large-scale sequential capture,
+semantic and instance annotations, and ego-motion ground truth.
+
+\textbf{Waymo Open}~\citep{sun2020waymo} provides 1000 multi-camera plus LiDAR
+driving segments covering diverse geographic and weather conditions, serving as
+the primary evaluation benchmark for neural driving simulators.
+\textbf{nuScenes}~\citep{caesar2020nuscenes} adds 360$^\circ$ camera coverage
+and HD maps to 1000 driving scenes, enabling evaluation of methods that
+must maintain consistency across the full surround-view camera ring.
+\textbf{KITTI-360}~\citep{liao2022kitti360} provides urban driving sequences
+with panoptic segmentation labels, enabling combined NVS and semantic evaluation.
+\textbf{Argoverse~2}~\citep{wilson2023argoverse2} provides 1000 high-resolution
+360$^\circ$ driving sequences with precise sensor calibration and HD map
+annotations, supporting the evaluation of large-scale neural scene simulators
+at the current frontier of sensor quality.
+\textbf{PandaSet}~\citep{xiao2021pandaset} provides 103 scenes with a
+forward-facing LIDAR plus multiple cameras, useful for evaluating fusion of
+camera and LiDAR NVS in a single consistent benchmark.
 
 Table~\ref{tab:datasets} provides a structured comparison of key datasets.
 

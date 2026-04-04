@@ -1,59 +1,186 @@
 \section{Open Problems and Research Roadmap}
 \label{sec:open}
 
+The survey presented in the preceding sections makes clear that the field of
+\nvs{}-to-world-modeling is progressing rapidly along multiple fronts simultaneously.
+Per-scene reconstruction from dense multi-view input is largely solved.
+Feed-forward generalisation to sparse-view and single-image input has
+seen dramatic advances in the past two years.
+And the first generation of world foundation models trained at internet scale
+has demonstrated that video generation and spatial synthesis are convergent problems.
+Yet the capability table in Section~\ref{sec:world} (Table~\ref{tab:nvs_wm})
+reveals that three of the five world-modeling desiderata---temporal dynamics
+(D3), action conditioning (D4), and physical plausibility (D5)---are only
+partially satisfied by current best methods.
+This section identifies the most important open problems that must be resolved
+to cross these frontiers, and proposes a concrete research roadmap.
+
 \subsection{The Geometry--Generation Trade-Off}
 
-Reconstruction methods deliver geometric precision but lack generative priors;
-diffusion methods provide rich priors but can violate multi-view consistency.
-Methods like ReconFusion, Cat3D, and ViewCrafter begin to bridge this gap,
-but the fundamental tension remains.
-Principled solutions (\eg, geometry-grounded diffusion, diffusion-seeded 3DGS)
-are an active frontier.
+The fundamental tension between the \emph{reconstruction} and \emph{generative}
+paradigms has not yet been resolved.
+Reconstruction-based methods (NeRF, 3DGS, feed-forward Gaussian) deliver
+geometric precision but are limited to what has been observed: they cannot
+hallucinate content outside the observed view frustum.
+Generative methods (diffusion NVS, world models) provide rich priors over
+plausible scene completions but can violate multi-view geometric consistency,
+producing views that are individually realistic but mutually contradictory in
+3-D space.
+
+Methods like ReconFusion~\citep{wu2024reconfusion},
+Cat3D~\citep{gao2024cat3d}, and ViewCrafter~\citep{yu2024viewcrafter}
+begin to bridge this gap by coupling a generative prior to an explicit 3-D
+scaffold, but the integration is primarily architectural (conditioning the
+diffusion model on a point cloud or NeRF) rather than principled (ensuring
+that the generated content satisfies 3-D consistency constraints during
+denoising).
+Principled solutions---such as geometry-grounded diffusion that enforces
+epipolar constraints during denoising, or diffusion-seeded 3DGS that
+initialises the Gaussian field from a generated multi-view set---represent
+an active frontier with significant room for innovation.
+The key insight we advocate is that the 3-D consistency constraint should
+be enforced \emph{during} generation rather than as a post-hoc filter,
+which would require integrating differentiable rendering into the
+diffusion denoising loop.
 
 \subsection{Long-Horizon Temporal Coherence}
 
-Existing 4-D methods maintain coherence over a few seconds.
-Two promising directions:
-(1) \emph{Persistent scene memory}: Gaussian maps that accumulate observations
-across time and preserve global consistency;
-(2) \emph{World model pre-training}: leveraging internet-scale video prediction
-as a temporal prior that can be fine-tuned to specific domains.
+Existing 4-D methods maintain coherence over a few seconds, corresponding
+to a few hundred frames of video.
+World models for autonomous driving and robotics require coherence over minutes
+of operation, during which the scene may change substantially due to agent
+interactions, illumination changes, and new scene content entering the field of view.
+Two promising directions have been identified in the recent literature,
+though neither has yet achieved the long-horizon coherence required by
+real-world applications.
+
+The first direction is \emph{persistent scene memory}: Gaussian maps that
+accumulate observations across time and preserve global consistency by storing
+the entire world state as a growing set of Gaussian primitives.
+Street Gaussians~\citep{yan2024streetgaussian} and OmniRe~\citep{chen2024omnire}
+demonstrate that this approach can handle scene-length (several-minute) driving
+sequences, but their memory grows without bound and they do not support
+closed-loop rollouts of novel trajectories.
+An efficient, bounded-memory Gaussian world state that can be queried and
+updated in real time remains an open problem.
+
+The second direction is \emph{world model pretraining}: leveraging internet-scale
+video prediction as a temporal prior that can be fine-tuned to specific domains.
+Cosmos~\citep{agarwal2025cosmos} and Genie~2~\citep{parkerholder2024genie2}
+represent the current frontier here, but their coherence degrades over longer
+horizons due to accumulated prediction errors in the autoregressive generation
+process---a fundamental challenge that may require non-autoregressive or
+hierarchical temporal architectures.
 
 \subsection{Physical Grounding}
 
-Current methods learn appearance correlations, not physical laws.
-Encouraging directions include:
-PAC-NeRF~\citep{li2023pac} for continuum mechanics integration;
-physics-informed deformable Gaussians for material simulation.
-The central challenge is integrating differentiable physics into the rendering pipeline
-in a way that scales to complex, open-world scenes.
+Current methods learn the appearance correlations that arise from physical
+laws, but they do not represent physical laws explicitly.
+This distinction matters for world modeling: a model that has learned that
+objects tend to remain stationary may generate plausible-looking video, but
+it will fail to predict the correct response to an unusual physical interaction
+(pushing an object off a table, flooding a scene, deforming an elastic material).
+Physical grounding is therefore a prerequisite for reliable world models in
+applications that require reasoning about novel or unusual physical events.
+
+PAC-NeRF~\citep{li2023pac} demonstrates a promising direction by integrating
+continuum mechanics into NeRF, enabling system identification of material
+properties from observed deformation.
+PhysGaussian~\citep{xie2024physgaussian} brings physics simulation to Gaussian
+Splatting, embedding Material Point Method (MPM) simulation directly in the
+Gaussian optimisation loop.
+The central challenge is extending these approaches to complex, open-world
+scenes with diverse materials and contact interactions: both PAC-NeRF and
+PhysGaussian have been demonstrated primarily on single-material, simple-geometry
+scenarios.
+Integrating differentiable physics more generally into the rendering pipeline
+in a way that scales to complex scenes and diverse material properties remains
+a largely open problem.
 
 \subsection{Open-Vocabulary Semantic Integration}
 
-Methods like LERF~\citep{kerr2023lerf} ground CLIP features in 3-D via NeRF,
-enabling open-vocabulary 3-D queries.
-LangSplat~\citep{qin2024langsplat} brings language grounding to 3DGS.
-Feature3DGS~\citep{zhou2024feature3dgs} distils various 2-D foundation model features.
-Extending these to dynamic, actionable scenes is a key step toward language-grounded
-world models.
+The methods surveyed in this paper largely address appearance-level scene
+understanding, but a full world model must also reason about \emph{semantics}:
+what is this object, what can I do with it, how will it respond to my action?
+The recent language-grounded 3-D field represents the most direct progress
+toward this goal.
+LERF~\citep{kerr2023lerf} grounds CLIP features in 3-D via NeRF,
+enabling open-vocabulary 3-D queries such as ``where is the wooden chair?''.
+LangSplat~\citep{qin2024langsplat} brings language grounding to 3DGS,
+achieving real-time semantic query response while maintaining the rendering
+speed advantage of the Gaussian representation.
+Feature3DGS~\citep{zhou2024feature3dgs} provides a more general framework,
+distilling arbitrary 2-D foundation model features---including SAM~\citep{kirillov2023sam}
+and DINO---into the Gaussian representation.
+
+Extending these language-grounding approaches to dynamic, actionable scenes
+is a key step toward language-grounded world models: a model that can both
+generate novel views of a scene and answer natural language queries about
+what it contains, how it will evolve, and how an agent can interact with it.
+This integration of spatial and semantic reasoning is a central challenge for
+the next generation of world models.
 
 \subsection{Evaluation and Benchmarks}
 
-We propose a five-axis world-modelling benchmark:
-(1)~3-D consistency under adversarial viewpoints;
-(2)~temporal coherence over long horizons ($>$30 s);
-(3)~action responsiveness in interactive settings;
-(4)~physical plausibility via physics-engine verification;
-(5)~open-world generalisation from a single image.
+The evaluation gap identified in Section~\ref{sec:eval} requires a new
+benchmark design that simultaneously tests all five world-modeling desiderata.
+We propose a \textbf{World Modeling Evaluation Suite} with five axes:
+\begin{enumerate}[leftmargin=*,label=(\roman*)]
+  \item \emph{3-D consistency} measured by multi-view photometric consistency
+    under adversarial viewpoints that maximally stress the geometric model;
+  \item \emph{Temporal coherence} measured over long horizons ($>$30\,s) using
+    feature-space consistency and structural similarity;
+  \item \emph{Action responsiveness} measured in interactive settings by
+    the quality of generated responses to specified agent actions;
+  \item \emph{Physical plausibility} verified by comparison against
+    physics-engine simulation of the same scenario;
+  \item \emph{Open-world generalisation} measured by single-image synthesis
+    quality across highly diverse, out-of-distribution environments.
+\end{enumerate}
+No existing benchmark covers all five axes.
+We note that designing such a benchmark is itself a substantial research
+contribution, as it requires defining a controlled test-bed for all five
+dimensions without introducing confounding factors between them.
 
 \subsection{Research Roadmap}
 
+Drawing the threads of this analysis together, we propose five research
+directions as the most productive frontiers for the immediate future.
+
 \begin{enumerate}[leftmargin=*,label=\textbf{R\arabic*.}]
-  \item Unified architectures combining explicit 3-D with diffusion priors.
-  \item Internet-scale feed-forward generalisation for open-world NVS.
-  \item Differentiable physics priors in 4-D world models.
-  \item Language and semantic grounding for action-conditioned generation.
-  \item Comprehensive world-modelling evaluation suite.
+  \item \textbf{Unified geometry-generation architectures.}
+    Develop architectures that couple explicit 3-D representations
+    (NeRF, 3DGS) with diffusion priors in a manner that enforces
+    3-D consistency during generation, not merely as a post-hoc filter.
+    The key technical challenge is integrating differentiable rendering into
+    the denoising loop without prohibitive computational cost.
+
+  \item \textbf{Internet-scale feed-forward generalisation.}
+    Scale feed-forward reconstruction models (LRM, DUSt3R, VGGT) to
+    internet-scale pretraining on diverse unstructured video, enabling
+    open-world NVS from a single image with generalisation to arbitrary
+    scene types encountered at deployment time.
+
+  \item \textbf{Differentiable physics in 4-D world models.}
+    Integrate differentiable physics priors into 4-D world model training,
+    building on the PAC-NeRF and PhysGaussian foundations, to enable
+    physically grounded prediction of novel physical interactions.
+
+  \item \textbf{Language and semantic grounding for action conditioning.}
+    Extend language-grounded 3-D representations (LERF, LangSplat, Feature3DGS)
+    to dynamic, actionable world models that can respond to natural language
+    action specifications, enabling instruction-following spatial agents.
+
+  \item \textbf{A comprehensive world modeling evaluation suite.}
+    Design and release a benchmark covering all five world-modeling
+    desiderata, with controlled, reproducible evaluation protocols
+    that separate each axis's contribution to total system performance.
+    This benchmark is a prerequisite for measuring progress on the
+    most challenging open problems.
 \end{enumerate}
+
+Together, these five directions define a research agenda that, if successfully
+prosecuted, would complete the transition from current \nvs{} systems---which
+solve D1 and partially D2---to full world models that satisfy all five desiderata.
 
 % ─────────────────────────────────────────────────────────────────────────────

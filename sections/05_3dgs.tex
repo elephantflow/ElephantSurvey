@@ -1,6 +1,23 @@
 \section{3D Gaussian Splatting}
 \label{sec:3dgs}
 
+Despite the quality advances of the NeRF family, a fundamental bottleneck
+remained: volumetric ray marching requires hundreds of sequential MLP
+evaluations per ray, making real-time rendering on commodity hardware essentially
+unachievable.
+3D Gaussian Splatting~(3DGS)~\citep{kerbl2023gaussian} resolved this constraint
+decisively, achieving over 100\,fps at 1080p resolution by replacing the
+continuous radiance field with a collection of explicit, anisotropic Gaussian
+primitives that are rendered via tile-based rasterisation.
+Beyond raw speed, the representation is fully explicit and directly editable:
+individual Gaussians can be identified, moved, duplicated, and removed without
+re-optimisation.
+These properties have opened a new chapter in \nvs{} research, generating a
+large and rapidly expanding literature that we organise here into four
+thematic directions: quality and anti-aliasing improvements, compression and
+memory efficiency, surface reconstruction, and scene editing and compositionality.
+Table~\ref{tab:3dgs_methods} provides a comprehensive cross-family comparison.
+
 \subsection{Foundational 3DGS}
 
 3DGS~\citep{kerbl2023gaussian} achieved real-time ($>$100\,fps at 1080p)
@@ -16,52 +33,111 @@ The resulting representation is fully explicit and editable, opening new
 directions in scene editing, simulation, and avatar rendering.
 
 \paragraph{Quality and anti-aliasing.}
+With the rendering speed bottleneck resolved, the focus shifted immediately
+to improving the visual quality of Gaussian-based rendering, particularly in
+regimes that exposed the approximations made by the original method.
+
 Mip-Splatting~\citep{yu2024mipsplatting} identifies aliasing in vanilla 3DGS
 as arising from the approximation of 3-D Gaussian convolution during 2-D
 projection.
 It introduces a 3-D smoothing filter derived from the sampling footprint,
 enabling accurate multi-scale rendering and substantially reducing floaters
 at large distances.
+This is the direct Gaussian-space analogue of the integrated positional
+encoding insight from Mip-NeRF, and it similarly establishes the anti-aliasing
+baseline for the 3DGS literature.
 AbsGS~\citep{ye2024absgs} revisits the densification criterion: replacing
 the mean gradient with an absolute-value measure improves coverage in
-thin structures and reduces needle-like artifacts near object boundaries.
+thin structures and reduces needle-like artifacts near object boundaries,
+demonstrating that the adaptive densification heuristic of vanilla 3DGS
+leaves systematic quality gaps that a principled gradient measure can address.
 
 \paragraph{Compression and memory efficiency.}
-A single 3DGS scene may require 300MB--1GB of storage, limiting deployment.
+A single 3DGS scene may require 300\,MB--1\,GB of storage, limiting deployment
+on mobile or embedded platforms and making it impractical to maintain multiple
+scenes in GPU memory simultaneously.
+Addressing this bottleneck has motivated a dedicated compression sub-field
+that seeks to reduce storage cost while preserving rendering quality.
+
 Scaffold-GS~\citep{lu2023scaffoldgs} introduces a sparse set of anchor
 primitives from which neural networks predict neighbouring Gaussian attributes;
 this structured representation reduces storage by $3$--$5\times$ with
 comparable quality.
+Rather than compressing an unstructured point cloud post-hoc, it imposes
+architectural structure during optimisation, ensuring that each Gaussian
+is efficiently described relative to its spatial context.
 LightGaussian~\citep{fan2023lightgaussian} achieves $15\times$ compression via
 global Gaussian pruning based on visibility contribution and subsequent
-vector quantisation of attributes.
+vector quantisation of attributes, demonstrating that the vast majority of
+Gaussians contribute negligibly to the final render and can be aggressively
+pruned without perceptible quality loss.
 EAGLES~\citep{girish2024eagles} applies residual vector quantisation
-for fine-grained attribute compression.
+for fine-grained attribute compression, pushing the quantisation
+of Gaussian attributes beyond scalar to multi-level residual codebooks.
 HAC~\citep{chen2024hac} proposes a hash-grid-based context model that predicts
 per-Gaussian attribute entropy, enabling learned arithmetic coding for
-extreme compression ratios.
+extreme compression ratios by exploiting spatial correlations between
+neighbouring Gaussians that simpler quantisation methods ignore.
 
 \paragraph{Surface reconstruction.}
+The Gaussian primitive is an inherently volumetric object: its density falls
+off smoothly in all directions with no well-defined surface.
+This makes mesh extraction from 3DGS non-trivial, yet many downstream
+applications---physical simulation, collision checking, UV texture mapping,
+and export to standard graphics pipelines---require explicit surface meshes.
+A dedicated line of work has addressed this by encouraging Gaussians to
+adopt disc-like or planar configurations aligned with scene surfaces.
+
 SuGaR~\citep{guedon2024sugar} aligns Gaussians to the scene surface by adding
 a regularisation term that encourages Gaussians to become flat discs at
 the surface, followed by mesh extraction and joint Gaussian--mesh refinement.
-2DGS~\citep{huang2024_2dgs} replaces 3-D Gaussians with 2-D disc primitives,
-which by construction lie on surfaces and produce accurate normal maps.
+This two-stage approach leverages the speed of Gaussian optimisation for
+initial scene reconstruction and the geometric precision of mesh refinement
+for final surface quality.
+2DGS~\citep{huang2024_2dgs} takes a more principled approach by replacing
+3-D Gaussians with 2-D disc primitives, which by construction lie on surfaces
+and produce accurate normal maps; the representation guarantees surface
+alignment without post-hoc regularisation.
 Gaussian Opacity Fields~(GOF)~\citep{yu2024gof} fuses Gaussian Splatting with
 a continuous opacity field for topologically correct surface extraction in
-unbounded scenes.
+unbounded scenes, addressing the failure mode of earlier methods on complex
+open-world geometry.
 
 \paragraph{Scene editing and compositionality.}
 The explicit Gaussian representation is particularly amenable to editing:
 individual primitives can be identified, moved, duplicated, or removed.
+This editability has inspired a line of work on semantically-aware and
+compositional Gaussian scenes that bridges \nvs{} and scene understanding.
+
 GaussianEditor~\citep{chen2024gaussianeditor} harnesses a large vision-language
 model to select semantically relevant Gaussians from a text description and
 optimises their appearance with a diffusion prior.
+The approach demonstrates that the VLM's semantic segmentation can be
+transferred to the Gaussian domain via rendered-view supervision, enabling
+language-guided 3-D editing without any 3-D annotation.
 Gaussian Grouping~\citep{ye2023gaussian_grouping} augments each Gaussian with
 a learned identity field, trained with SAM~\citep{kirillov2023sam} masks from
 rendered views, enabling instance-level part decomposition and editing.
+By propagating 2-D instance masks into 3-D Gaussian space via the differentiable
+renderer, it achieves zero-shot part decomposition that requires no 3-D
+supervision.
+LERF~\citep{kerr2023lerf} and LangSplat~\citep{qin2024langsplat} both
+ground language into 3-D neural representations, with LERF doing so in
+NeRF space and LangSplat directly in the Gaussian representation;
+together they demonstrate that open-vocabulary 3-D querying---``show me all
+chairs in this scene''---is achievable with language-image pretraining.
 GALA3D~\citep{zhou2024gala3d} uses an LLM to generate a 3-D layout from text
-and initialises Gaussians per-object, enabling compositional scene generation.
+and initialises Gaussians per-object, enabling compositional scene generation
+that extends the scene-level 3DGS capabilities beyond reconstruction to text-driven
+synthesis of entirely novel multi-object scenes.
+
+The synthesis of editing-focused methods reveals an important pattern:
+the Gaussian representation is increasingly serving as the interface between
+2-D foundation models (SAM, CLIP, LLMs) and 3-D scene understanding,
+because the differentiable rasteriser provides a natural gradient bridge
+from rendered-view 2-D supervision to 3-D primitive attributes.
+This architectural pattern---2-D supervision $\to$ Gaussian attributes---is
+likely to become even more central as 2-D foundation models continue to improve.
 
 Table~\ref{tab:3dgs_methods} provides a comprehensive view of the 3DGS family.
 
@@ -131,49 +207,111 @@ Table~\ref{tab:3dgs_methods} provides a comprehensive view of the 3DGS family.
 
 \subsection{Dynamic 3DGS}
 
-4DGS~\citep{wu2024_4dgs} extends Gaussians into 4-D space-time with a
-temporal radiance field.
+Static 3DGS, while powerful, is limited to scenes that remain fixed over
+time.
+Extending Gaussian splatting to dynamic scenes requires mechanisms to model
+the \emph{motion} of Gaussian primitives over time---a challenge that has
+attracted considerable attention given the representation's unique combination
+of explicit, editable structure and real-time rendering speed.
+The key design question is whether to model motion as a \emph{deformation field}
+applied to canonical Gaussians, or as an \emph{intrinsic temporal attribute}
+directly parameterising each Gaussian's trajectory.
+
+4DGS~\citep{wu2024_4dgs} takes the second approach, extending Gaussians into
+4-D space-time by pairing each primitive with a temporal radiance field that
+modulates its position and appearance as a function of time; this formulation
+enables real-time rendering of complex dynamic scenes such as sports and dance.
 SpacetimeGaussians~\citep{yang2024spacetime} assigns polynomial time
-trajectories to each Gaussian.
-Deformable3DGS~\citep{yang2024deformable} applies a deformation network to
-canonical Gaussians.
-SC-GS~\citep{huang2024scgs} uses sparse control points for monocular dynamic
-scenes.
+trajectories directly to each Gaussian's position and rotation, providing
+a compact and analytically differentiable motion representation that avoids
+the computational cost of an implicit deformation network.
+Deformable3DGS~\citep{yang2024deformable} and SC-GS~\citep{huang2024scgs}
+adopt the canonical deformation approach, following the D-NeRF paradigm but
+in the Gaussian domain: Deformable3DGS applies a global deformation network
+to all Gaussians, while SC-GS uses sparse control points that provide a
+physically interpretable, structure-aware deformation field particularly
+suited for articulated and human body scenes.
+
 Gaussian-Flow~\citep{lin2024gaussianflow} models Gaussian dynamics via
-polynomial motion fields in Fourier space.
-Shape-of-Motion~\citep{wang2024shapeofmotion} reconstructs per-Gaussian 3-D
-motion from monocular videos.
+polynomial motion fields in Fourier space, enabling compact temporal
+parameterisation that naturally captures periodic motions such as walking
+and repetitive industrial machinery.
+Shape-of-Motion~\citep{wang2024shapeofmotion} takes a more ambitious approach,
+jointly estimating per-Gaussian 3-D motion and global scene flow from
+monocular video, operating in the most challenging input regime.
 Dynamic 3D Gaussians~\citep{luiten2024dynamic3dgs} tracks scene dynamics
-through persistent Gaussian views, jointly optimising NVS and tracking.
-GauFRe~\citep{liang2024gaufre} uses Gaussian deformation fields with
-flow regularisation for real-time dynamic NVS.
-MoVieS~\citep{sun2024movies} generates motion-aware 4-D dynamic views in
-approximately one second via efficient Gaussian motion estimation.
-Self-Calibrating 4D~\citep{kim2024selfcal4d} performs 4-D NVS from monocular
-videos by jointly estimating camera parameters and Gaussian deformations.
-Reconstruct-Inpaint-Finetune~\citep{han2024rif} addresses dynamic monocular
-NVS via a three-stage pipeline of reconstruction, inpainting, and test-time
-refinement.
+through persistent Gaussian identities across views, treating the tracking
+and NVS problems as jointly constrained by the photometric consistency of
+the Gaussian primitives.
+
+GauFRe~\citep{liang2024gaufre} and MoVieS~\citep{sun2024movies} both target
+the \emph{efficiency} end of the dynamic 3DGS spectrum:
+GauFRe regularises the deformation field with dense optical flow to produce
+temporally coherent results from monocular video, while MoVieS generates
+motion-aware 4-D dynamic views in approximately one second via an
+efficient Gaussian motion estimation pipeline.
+Self-Calibrating 4D~\citep{kim2024selfcal4d} addresses the practical challenge
+that monocular dynamic videos lack calibrated camera parameters, jointly
+estimating camera intrinsics and extrinsics alongside the Gaussian deformation.
+Reconstruct-Inpaint-Finetune~\citep{han2024rif} takes a pragmatic three-stage
+approach---first reconstructing the static scene, then inpainting dynamic regions
+with a generative model, and finally refining the result at test time---that
+produces high-quality dynamic novel views without an end-to-end dynamic 3DGS model.
 EVA-Gaussian~\citep{hu2024evacg} achieves real-time human NVS under diverse
 multi-view settings.
 Articulated Gaussian~\citep{li2024articulatedgs} enables template-free
 articulated Gaussian Splatting for real-time reposable dynamic view synthesis.
 
+Surveying the dynamic 3DGS landscape reveals a common tension: deformation-field
+methods provide high quality but require per-scene optimisation, while
+trajectory-attribute methods are faster but less expressive for complex
+non-rigid motion.
+The monocular dynamic synthesis problem remains substantially harder than
+the multi-view case due to the depth-motion ambiguity, and the best current
+methods still rely on additional supervision from optical flow and monocular
+depth estimates to constrain the otherwise ill-posed optimisation.
+
 \subsection{Feed-Forward Generalizable 3DGS}
 
-pixelSplat~\citep{charatan2024pixelsplat} predicts Gaussian primitives from
-stereo image pairs in a single forward pass.
-MVSplat~\citep{chen2024mvsplat} adds cost-volume priors for better geometry.
+The feed-forward 3DGS paradigm inherits the architectural pattern established
+by generalisable NeRF---amortise scene-specific computation into a pretrained
+model---while retaining the rendering speed advantage of the Gaussian representation.
+The result is a family of models that synthesise novel views in a single
+forward pass, without any per-scene optimisation, at real-time rendering speed.
+This combination of generalisation and rendering efficiency is precisely what
+downstream applications in robotics and autonomous driving require.
+
+pixelSplat~\citep{charatan2024pixelsplat} established the feed-forward 3DGS
+paradigm by predicting Gaussian primitives from stereo image pairs in a single
+forward pass, using epipolar attention to exploit the known geometric relationship
+between the two cameras.
+The model implicitly solves stereo matching, depth estimation, and Gaussian
+attribute prediction in a unified architecture.
+MVSplat~\citep{chen2024mvsplat} adds explicit cost-volume priors for better
+geometry under challenging viewpoints, demonstrating that the multi-view stereo
+geometry prior---which proved essential in the generalisable NeRF literature---is
+equally beneficial in the Gaussian domain.
 TranSplat~\citep{zhang2024transplate} introduces a transformer architecture for
-multi-view Gaussian prediction.
-Splatt3R~\citep{smart2024splatt3r} builds on DUSt3R~\citep{wang2024dust3r}
-for unposed image pairs.
+multi-view Gaussian prediction that attends across all input views jointly,
+enabling better utilisation of cross-view geometric consistency cues.
+
+Splatt3R~\citep{smart2024splatt3r} takes a qualitatively different approach by
+building on DUSt3R~\citep{wang2024dust3r}, which predicts dense 3-D point maps
+directly from unposed image pairs.
+By treating the DUSt3R pointmaps as Gaussian positions and learning only the
+Gaussian attributes (colour, opacity, scale) via a lightweight decoder,
+Splatt3R achieves unposed image reconstruction---no camera calibration
+required---which dramatically simplifies the capture pipeline.
 FSGS~\citep{zhu2024fsgs} enables few-shot Gaussian Splatting via Gaussian
-unpooling and monocular depth supervision.
+unpooling and monocular depth supervision, specifically addressing the
+case where only three or fewer reference views are available.
 DepthSplat~\citep{xu2024depthsplat} jointly predicts depth and Gaussians
-for generalizable NVS.
+in a single model, sharing representations between the depth estimation
+and Gaussian prediction tasks to improve geometry quality.
 TriplaneGaussian~\citep{zou2024triplanegaussian} combines triplane and
-Gaussian representations in a transformer-based single-view reconstruction model.
+Gaussian representations in a transformer-based single-view reconstruction model,
+using the triplane as an intermediate 3-D feature representation that is
+then decoded into Gaussian primitives.
 
 The feed-forward generalizable methods are included in the comprehensive
 Table~\ref{tab:3dgs_methods} above (FF category).

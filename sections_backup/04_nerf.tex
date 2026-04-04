@@ -1,0 +1,191 @@
+\section{NeRF: Implicit Neural Radiance Fields}
+\label{sec:nerf}
+
+\subsection{Foundational NeRF Methods}
+
+The original NeRF~\citep{mildenhall2020nerf} demonstrated that an MLP with
+positional encoding could faithfully represent complex real scenes with
+view-dependent appearance from a few dozen posed photographs.
+Subsequent work systematically addressed its two principal limitations---slow
+optimisation and poor generalisation to novel scenes.
+
+\paragraph{Accelerating per-scene optimisation.}
+The bottleneck in vanilla NeRF is the MLP query: every rendered pixel
+requires hundreds of network evaluations along the ray.
+Instant-NGP~\citep{muller2022instant} replaces the large MLP backbone with a
+compact multi-resolution \emph{hash grid}, enabling training convergence in
+under a minute on a single GPU while matching or exceeding prior quality.
+TensoRF~\citep{chen2022tensorf} decomposes the radiance field into low-rank
+CP and VM tensor components, reducing both storage and rendering overhead.
+Plenoxels~\citep{fridovich2022plenoxels} eliminates the MLP entirely,
+using a sparse 3-D voxel grid with trilinearly interpolated spherical harmonics;
+the resulting model trains in minutes without gradient-intensive network
+backward passes.
+DirectVoxGO~\citep{sun2022dvgo} accelerates convergence via a two-stage
+coarse-to-fine voxel grid that aggressively skips empty space.
+
+\paragraph{Improving visual quality and handling challenging scenes.}
+Mip-NeRF~\citep{barron2021mipnerf} replaces the point-sampled ray with an
+\emph{integrated positional encoding} over a conical frustum, substantially
+reducing aliasing at multiple viewing distances.
+Mip-NeRF~360~\citep{barron2022mipnerf360} extends this to unbounded outdoor
+scenes via a non-linear scene parameterisation that contracts the infinite
+background into a bounded representation.
+Zip-NeRF~\citep{barron2023zipnerf} unifies the hash grid of Instant-NGP with
+the anti-aliasing of Mip-NeRF~360, establishing the current quality frontier
+for per-scene NeRF.
+NeRF-W~\citep{martinbrualla2021nerfw} introduces per-image latent appearance
+codes and a transient object model, enabling reconstruction of tourist-photographed
+landmarks from uncontrolled internet images.
+Ref-NeRF~\citep{verbin2022refnerf} restructures the directional encoding into
+a physically-based reflection model that explicitly predicts diffuse colour,
+specular tint, and surface roughness, dramatically improving the rendering of
+specular and metallic materials.
+
+\paragraph{Surface reconstruction.}
+While volume rendering naturally produces accurate alpha composites, it does not
+enforce a well-defined surface, leading to noisy geometry.
+NeuS~\citep{wang2021neus} reformulates volume rendering using a logistic
+density derived from a Signed Distance Function~(SDF), yielding watertight,
+high-quality surface reconstruction.
+VolSDF~\citep{yariv2021volsdf} derives a rigorous analytical mapping from
+SDF values to volume density, providing a theoretically grounded alternative.
+BakedSDF~\citep{yariv2023bakedsdf} combines the surface quality of SDF-based
+NeRF with real-time rendering by extracting and baking the learned SDF into a
+high-quality mesh.
+
+Table~\ref{tab:nerf_methods} provides a comprehensive comparison of NeRF variants
+across all three sub-families: per-scene optimisation, generalizable,
+and dynamic methods.
+
+\begin{table*}[t]
+  \centering
+  \caption{Comprehensive NeRF method comparison.
+    \textbf{Category}: PS=per-scene, GEN=generalizable, DYN=dynamic.
+    \textbf{Train}/\textbf{Render}: speed relative to vanilla NeRF (Fast/Med/Slow).
+    \textbf{Gen.}: generalizes across scenes without per-scene re-training.
+    \textbf{Dyn.}: handles dynamic or deformable scenes.
+    \textbf{Surf.}: produces explicit surface (mesh/SDF).}
+  \label{tab:nerf_methods}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}llccccccp{4.2cm}@{}}
+    \toprule
+    \textbf{Method} & \textbf{Venue} & \textbf{Cat.}
+      & \textbf{Train} & \textbf{Render}
+      & \textbf{Gen.} & \textbf{Dyn.} & \textbf{Surf.}
+      & \textbf{Key Contribution} \\
+    \midrule
+    \multicolumn{9}{@{}l}{\textit{Per-scene optimisation}} \\
+    NeRF~\citep{mildenhall2020nerf}            & ECCV'20    & PS & Slow & Slow & \no & \no & \no & MLP + positional encoding \\
+    NeRF-W~\citep{martinbrualla2021nerfw}       & CVPR'21    & PS & Slow & Slow & \no & \no & \no & In-the-wild appearance codes \\
+    Mip-NeRF~\citep{barron2021mipnerf}         & ICCV'21    & PS & Slow & Slow & \no & \no & \no & Integrated positional encoding \\
+    NeuS~\citep{wang2021neus}                  & NeurIPS'21 & PS & Slow & Slow & \no & \no & \yes & SDF-based volume rendering \\
+    VolSDF~\citep{yariv2021volsdf}             & NeurIPS'21 & PS & Slow & Slow & \no & \no & \yes & Analytical SDF-to-density \\
+    Plenoxels~\citep{fridovich2022plenoxels}   & CVPR'22    & PS & Fast & Fast & \no & \no & \no & No-MLP voxel grid + SH \\
+    TensoRF~\citep{chen2022tensorf}            & ECCV'22    & PS & Med  & Fast & \no & \no & \no & CP/VM tensor decomposition \\
+    DirectVoxGO~\citep{sun2022dvgo}            & CVPR'22    & PS & Fast & Fast & \no & \no & \no & Two-stage coarse-to-fine voxel \\
+    Instant-NGP~\citep{muller2022instant}      & TOG'22     & PS & Fast & Fast & \no & \no & \no & Multi-resolution hash grid \\
+    Mip-NeRF360~\citep{barron2022mipnerf360}   & CVPR'22    & PS & Slow & Slow & \no & \no & \no & Unbounded scene contraction \\
+    Ref-NeRF~\citep{verbin2022refnerf}         & CVPR'22    & PS & Slow & Slow & \no & \no & \no & Physics-based reflection model \\
+    Zip-NeRF~\citep{barron2023zipnerf}         & ICCV'23    & PS & Fast & Fast & \no & \no & \no & Hash grid + anti-aliasing \\
+    BakedSDF~\citep{yariv2023bakedsdf}         & SIGGRAPH'23& PS & Med  & Fast & \no & \no & \yes & SDF mesh extraction + baking \\
+    \midrule
+    \multicolumn{9}{@{}l}{\textit{Generalizable methods}} \\
+    pixelNeRF~\citep{yu2021pixelnerf}          & CVPR'21    & GEN& Fast & Slow & \yes& \no & \no & Pixel-aligned CNN features \\
+    IBRNet~\citep{wang2021ibrnet}              & CVPR'21    & GEN& Fast & Slow & \yes& \no & \no & Cross-view transformer aggregation \\
+    MVSNeRF~\citep{chen2021mvsnerf}            & ICCV'21    & GEN& Fast & Slow & \yes& \no & \no & Cost-volume geometry prior \\
+    SRT~\citep{sajjadi2022srt}                 & CVPR'22    & GEN& Fast & Fast & \yes& \no & \no & Set-latent scene representation \\
+    GNT~\citep{wang2022gnt}                    & arXiv'22   & GEN& Fast & Med  & \yes& \no & \no & Fully attention-based, no NeRF MLP \\
+    NerfDiff~\citep{gu2023nerfdiff}            & ICML'23    & GEN& Fast & Slow & \yes& \no & \no & Diffusion prior for single-view \\
+    ZeroRF~\citep{shi2023zerorf}               & arXiv'23   & GEN& Med  & Slow & \pt & \no & \no & Zero-pretrain sparse-view 360$^\circ$ \\
+    FrameNeRF~\citep{yan2024framenerf}         & arXiv'24   & GEN& Fast & Slow & \yes& \no & \no & Video frames as pseudo views \\
+    \midrule
+    \multicolumn{9}{@{}l}{\textit{Dynamic \& deformable methods}} \\
+    D-NeRF~\citep{pumarola2021dnerf}           & CVPR'21    & DYN& Slow & Slow & \no & \yes& \no & Canonical deformation network \\
+    NSFF~\citep{li2021neural_scene_flow}       & CVPR'21    & DYN& Slow & Slow & \no & \yes& \no & Explicit scene flow field \\
+    Nerfies~\citep{park2021nerfies}            & ICCV'21    & DYN& Slow & Slow & \no & \yes& \no & Per-frame latent deformation \\
+    HyperNeRF~\citep{park2021hypernerf}        & TOG'21     & DYN& Slow & Slow & \no & \yes& \no & Higher-dimensional ambient space \\
+    Non-Rigid NeRF~\citep{tretschk2021nonrigid}& ICCV'21    & DYN& Slow & Slow & \no & \yes& \no & Monocular ray bending \\
+    DyNeRF~\citep{li2022neural3d}              & CVPR'22    & DYN& Slow & Slow & \no & \yes& \no & Time-conditioned multi-view NeRF \\
+    TiNeuVox~\citep{fang2022tineuvox}          & SIGGRAPH'22& DYN& Med  & Med  & \no & \yes& \no & Voxel-accelerated dynamic NeRF \\
+    K-Planes~\citep{fridovich2023kplanes}      & CVPR'23    & DYN& Fast & Fast & \no & \yes& \no & 4-D plane decomposition \\
+    HexPlane~\citep{cao2023hexplane}           & CVPR'23    & DYN& Fast & Fast & \no & \yes& \no & Concurrent 4-D plane factorisation \\
+    NeRFPlayer~\citep{song2023nerfplayer}      & TOG'23     & DYN& Med  & Med  & \no & \yes& \no & Static/deforming/new region decomp. \\
+    Soup-of-Planes~\citep{du2023soupofplanes}  & ICCV'23    & DYN& Fast & Fast & \no & \yes& \no & Planar fitting for casual video \\
+    Pseudo-GDV~\citep{zhao2024pgdvs}           & CVPR'24    & DYN& Med  & Slow & \no & \yes& \no & Static + dynamic inpainting \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\subsection{Generalizable NeRF}
+
+Per-scene NeRF requires lengthy per-scene optimisation, limiting scalability.
+\emph{Generalisable} methods learn a shared prior across scenes, enabling
+fast inference on new scenes.
+
+pixelNeRF~\citep{yu2021pixelnerf} conditions the NeRF MLP on pixel-aligned
+CNN features extracted from reference views, enabling single-image reconstruction.
+IBRNet~\citep{wang2021ibrnet} uses a transformer to aggregate features from
+multiple reference views at query points along the ray.
+MVSNeRF~\citep{chen2021mvsnerf} builds a cost volume from stereo for
+geometry-aware feature extraction.
+GNT~\citep{wang2022gnt} dispenses with the NeRF MLP entirely, replacing it
+with a two-stage transformer that first encodes reference views into a
+view-independent representation and then renders the target view via
+cross-attention, learning geometric reasoning as an emergent property of
+attention rather than an explicit inductive bias.
+SRT~\citep{sajjadi2022srt} pursues a similar philosophy but uses a
+set-latent architecture, encoding an arbitrary number of views into a
+fixed-size scene representation without pose assumptions.
+NerfDiff~\citep{gu2023nerfdiff} augments generalizable NeRF with diffusion
+priors for single-image synthesis.
+ZeroRF~\citep{shi2023zerorf} achieves sparse-view 360$^\circ$ reconstruction
+via per-scene optimisation with zero pretraining, leveraging factorised feature grids.
+
+\paragraph{Few-shot and test-time methods.}
+FrameNeRF~\citep{yan2024framenerf} presents a simple and efficient framework
+for few-shot NVS by exploiting temporal video frames as dense pseudo views.
+Recollection from Pensieve~\citep{zhou2024pensieve} learns NVS from uncalibrated
+internet videos without posed supervision.
+Test-Time Completion~\citep{bao2024tttcompletion} repurposes natural video
+completion as a zero-shot NVS prior at test time.
+Mixed Neural Voxels~\citep{wang2023mixedvoxels} enables fast multi-view video
+synthesis by decomposing scenes into static and dynamic voxel grids.
+
+\subsection{Dynamic NeRF}
+
+Modelling non-rigid dynamic scenes is a central challenge for world modeling.
+
+D-NeRF~\citep{pumarola2021dnerf} introduces a deformation network mapping each
+spacetime point to a canonical static space.
+Nerfies~\citep{park2021nerfies} and
+HyperNeRF~\citep{park2021hypernerf} model complex non-rigid deformations via
+latent codes and higher-dimensional ambient spaces.
+Neural Scene Flow Fields~(NSFF)~\citep{li2021neural_scene_flow} models dynamic
+scenes with scene flow representation.
+Non-Rigid NeRF~\citep{tretschk2021nonrigid} reconstructs and synthesises
+novel views of dynamic scenes from monocular video with explicit ray bending.
+DyNeRF~\citep{li2022neural3d} extends NeRF to monocular video via a
+time-conditioned model.
+TiNeuVox~\citep{fang2022tineuvox} uses voxel features to accelerate dynamic NeRF.
+K-Planes~\citep{fridovich2023kplanes} decomposes 4-D space-time into six
+feature planes---three spatial (XY, XZ, YZ) and three spatial-temporal
+(XT, YT, ZT)---each encoded as a learned 2-D grid, making the architecture
+highly memory-efficient and interpretable.
+HexPlane~\citep{cao2023hexplane} independently proposes the same factorisation,
+demonstrating its generality; together these works establish plane-based
+4-D decomposition as the dominant acceleration paradigm for dynamic NeRF.
+NeRFPlayer~\citep{song2023nerfplayer} separately encodes static, deforming and
+newly appearing regions.
+Soup-of-Planes~\citep{du2023soupofplanes} enables fast view synthesis of
+casual monocular videos by fitting a set of planar scenes.
+Pseudo-Generalised Dynamic View~\citep{zhao2024pgdvs} synthesises dynamic views
+from monocular video by combining static and dynamic video inpainting.
+Decoupled Dynamic Video~\citep{wang2024decoupleddynamic} disentangles foreground
+dynamics and background statics for monocular dynamic view synthesis.
+
+The dynamic NeRF methods are included in the comprehensive
+Table~\ref{tab:nerf_methods} above.
+
+% ─────────────────────────────────────────────────────────────────────────────

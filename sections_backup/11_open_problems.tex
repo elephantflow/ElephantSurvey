@@ -1,0 +1,59 @@
+\section{Open Problems and Research Roadmap}
+\label{sec:open}
+
+\subsection{The Geometry--Generation Trade-Off}
+
+Reconstruction methods deliver geometric precision but lack generative priors;
+diffusion methods provide rich priors but can violate multi-view consistency.
+Methods like ReconFusion, Cat3D, and ViewCrafter begin to bridge this gap,
+but the fundamental tension remains.
+Principled solutions (\eg, geometry-grounded diffusion, diffusion-seeded 3DGS)
+are an active frontier.
+
+\subsection{Long-Horizon Temporal Coherence}
+
+Existing 4-D methods maintain coherence over a few seconds.
+Two promising directions:
+(1) \emph{Persistent scene memory}: Gaussian maps that accumulate observations
+across time and preserve global consistency;
+(2) \emph{World model pre-training}: leveraging internet-scale video prediction
+as a temporal prior that can be fine-tuned to specific domains.
+
+\subsection{Physical Grounding}
+
+Current methods learn appearance correlations, not physical laws.
+Encouraging directions include:
+PAC-NeRF~\citep{li2023pac} for continuum mechanics integration;
+physics-informed deformable Gaussians for material simulation.
+The central challenge is integrating differentiable physics into the rendering pipeline
+in a way that scales to complex, open-world scenes.
+
+\subsection{Open-Vocabulary Semantic Integration}
+
+Methods like LERF~\citep{kerr2023lerf} ground CLIP features in 3-D via NeRF,
+enabling open-vocabulary 3-D queries.
+LangSplat~\citep{qin2024langsplat} brings language grounding to 3DGS.
+Feature3DGS~\citep{zhou2024feature3dgs} distils various 2-D foundation model features.
+Extending these to dynamic, actionable scenes is a key step toward language-grounded
+world models.
+
+\subsection{Evaluation and Benchmarks}
+
+We propose a five-axis world-modelling benchmark:
+(1)~3-D consistency under adversarial viewpoints;
+(2)~temporal coherence over long horizons ($>$30 s);
+(3)~action responsiveness in interactive settings;
+(4)~physical plausibility via physics-engine verification;
+(5)~open-world generalisation from a single image.
+
+\subsection{Research Roadmap}
+
+\begin{enumerate}[leftmargin=*,label=\textbf{R\arabic*.}]
+  \item Unified architectures combining explicit 3-D with diffusion priors.
+  \item Internet-scale feed-forward generalisation for open-world NVS.
+  \item Differentiable physics priors in 4-D world models.
+  \item Language and semantic grounding for action-conditioned generation.
+  \item Comprehensive world-modelling evaluation suite.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────

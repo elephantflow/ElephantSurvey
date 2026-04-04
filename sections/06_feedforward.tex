@@ -1,73 +1,172 @@
 \section{Generalisable Feed-Forward 3D Reconstruction}
 \label{sec:generalisable}
 
+The per-scene paradigm that dominates the NeRF and classical 3DGS literature
+carries a fundamental limitation: every new scene requires a fresh optimisation
+loop lasting tens of minutes to hours.
+This is incompatible with real-world applications where new scenes are encountered
+continuously---autonomous vehicles observing novel road segments, robots
+entering unfamiliar rooms, AR systems overlaying content on new environments.
+The \emph{feed-forward reconstruction} paradigm directly addresses this bottleneck:
+a single, amortised model trained on large datasets of 3-D assets or multi-view
+captures learns to predict a complete 3-D scene representation from one or
+a few images in a single forward pass.
+
+This section covers two complementary approaches to this goal.
+We first discuss the pose-free foundation model line of work (DUSt3R, MASt3R,
+and successors), which treats reconstruction as a direct regression problem
+from image pairs to point maps without requiring camera calibration.
+We then examine the Large Reconstruction Model (LRM) paradigm, which uses
+large transformer models pretrained on 3-D asset repositories to predict
+NeRF or Gaussian scenes from a single image.
+Together, these two families represent the current state-of-the-art in
+generalised single-image and sparse-view 3-D understanding.
+
 \subsection{Pose-Free and Foundation Models}
 
-A new generation of methods aims for \emph{pose-free} generalizable reconstruction.
-DUSt3R~\citep{wang2024dust3r} predicts dense pointmaps from arbitrary image pairs
-without camera calibration, then aligns them via global optimisation.
-MASt3R~\citep{leroy2024mast3r} adds matching capabilities to DUSt3R, enabling
-accurate localisation.
-MonST3R~\citep{zhang2024monst3r} extends DUSt3R to dynamic video.
-VGGT~\citep{wang2025vggt} is a visual geometry grounded deep structured tokens
-model for feed-forward 3-D structure prediction.
+The classical 3-D reconstruction pipeline requires camera calibration as a
+prerequisite: Structure-from-Motion~\citep{schoenberger2016sfm} must be run
+to estimate camera poses before any NeRF or 3DGS optimisation can begin.
+This prerequisite is a significant practical obstacle---internet-sourced images
+rarely come with calibration information, and running SfM on every image
+collection adds latency.
+A new generation of \emph{pose-free} models eliminates this prerequisite by
+learning to predict 3-D geometry directly from image pairs, treating camera
+pose estimation as an internal computation rather than an external preprocessing
+step.
+
+DUSt3R~\citep{wang2024dust3r} is the landmark work of this direction.
+Rather than predicting depth or disparity (which require calibration to convert
+to metric 3-D), DUSt3R predicts \emph{dense point maps}: for each pixel in
+both input images, it directly regresses the 3-D coordinate in a shared
+Euclidean frame.
+The key insight is that a ViT backbone with cross-image attention can jointly
+reason about both images and implicitly solve the correspondence and geometry
+problems in a single forward pass.
+For collections of more than two images, DUSt3R aligns pairwise predictions
+via a global optimisation that finds the rotation and translation that minimises
+pairwise reprojection error, producing a metrically accurate 3-D reconstruction
+without any explicit SfM.
+
+MASt3R~\citep{leroy2024mast3r} extends DUSt3R by adding a matching head that
+produces dense feature descriptors alongside the point map predictions.
+This addition enables accurate metric reconstruction from internet-sourced
+photo pairs where appearance varies substantially---a regime where vanilla
+DUSt3R's purely geometric predictions can accumulate errors---and directly
+enables downstream applications such as localisation and structure-aware
+image retrieval.
+
+MonST3R~\citep{zhang2024monst3r} extends DUSt3R to dynamic video sequences,
+where the scene contains independently moving objects.
+By jointly estimating camera motion and scene-object motion within the same
+point-map regression framework, MonST3R handles the dynamic case that DUSt3R
+implicitly assumes away, substantially broadening the practical applicability
+of pose-free reconstruction to casually captured video.
+
+VGGT~\citep{wang2025vggt} represents the most recent advance in this line,
+proposing a Visual Geometry Grounded Transformer that predicts a comprehensive
+set of geometric quantities---point maps, depth, camera parameters, and feature
+descriptors---from an arbitrary number of views in a single transformer forward
+pass.
+Its key innovation is the integration of structured geometric tokens that
+provide an explicit 3-D coordinate system for the transformer's attention
+operations, enabling the model to reason jointly about all geometric quantities
+rather than treating each as an independent prediction head.
+
+The pose-free foundation models collectively demonstrate that large-scale
+pretraining on diverse 3-D data can substitute for the carefully designed
+geometric pipelines that classical reconstruction required, opening the door
+to reconstruction from casually captured, unposed image collections.
+This generalisation is a direct enabler of world modeling at scale, where
+collecting calibrated sensor data for every new environment is impractical.
 
 \subsection{Large Reconstruction Models (LRM)}
 \label{sec:lrm}
 
-The Large Reconstruction Model (LRM)~\citep{hong2023lrm} paradigm represents
-a qualitative shift from per-scene optimisation to \emph{feed-forward inference}:
-a single forward pass of a large transformer, pretrained on hundreds of thousands
-of 3-D assets, produces a NeRF or Gaussian scene from a single image in under
-5 seconds.
-This is possible because the model amortises the geometric reasoning of NeRF
-optimisation into its weights---a striking demonstration that scale can substitute
-for per-instance compute.
+While the pose-free models address multi-view reconstruction, a parallel
+line of work targets an even more challenging regime: reconstructing a
+complete 3-D scene from a \emph{single} image.
+Single-image reconstruction is fundamentally under-constrained without a
+strong prior---the imaging process collapses 3-D geometry to a 2-D projection,
+discarding all depth information and occluded geometry---and requires a
+model that has internalised the distribution of plausible 3-D shapes for the
+objects and scenes it encounters.
+The Large Reconstruction Model~(LRM) paradigm~\citep{hong2023lrm} provides this
+prior through large-scale pretraining: a transformer trained on hundreds of
+thousands of 3-D assets from Objaverse~\citep{deitke2023objaverse} learns
+to map a single input image to a complete triplane representation of a NeRF,
+achieving complete 3-D reconstruction in under five seconds.
 
-LRM~\citep{hong2023lrm} itself uses an image encoder (DINO-ViT) followed by
-a cross-attention transformer that maps image tokens to triplane tokens, which
-are then decoded by a NeRF MLP.
-Instant3D~\citep{li2023instant3d} extends this by first generating sparse multi-view
-images with a diffusion model, then feeding the result to an LRM-style reconstructor,
-decoupling appearance generation from geometry prediction.
-OpenLRM~\citep{openlrm2023} reproduces LRM in an open-source setting.
+The LRM~\citep{hong2023lrm} architecture uses a DINO-ViT encoder followed by
+a cross-attention transformer that maps image tokens to triplane tokens,
+which are decoded by a NeRF MLP.
+The key insight is that the transformer can amortise the geometric reasoning
+of per-scene NeRF optimisation into its weights via large-scale pretraining:
+by training on hundreds of thousands of objects with known ground-truth geometry,
+the model learns to \emph{recognise} plausible 3-D shapes rather than
+\emph{optimise} them.
+Instant3D~\citep{li2023instant3d} decouples appearance generation from geometry
+prediction, first generating sparse multi-view images with a diffusion model
+and then feeding the result to an LRM-style reconstructor.
+This two-stage design allows each component to be trained on different data
+and to be improved independently, and it achieves text-to-3D generation
+in under five seconds---a remarkable speed relative to the hours required by
+SDS-based alternatives.
+OpenLRM~\citep{openlrm2023} reproduces the LRM pipeline in an open-source
+setting, enabling broader research access to the paradigm.
 
-The Gaussian-based branch has proven especially fast.
+The Gaussian-based LRM branch has proven especially popular for its additional
+rendering speed advantage.
 LGM~\citep{tang2024lgm} generates multi-view images and lifts them to a 3DGS
 scene via an asymmetric U-Net, achieving 3-D generation in seconds at
-commercial-grade quality.
+commercial-grade quality while retaining the real-time rendering advantage of
+the Gaussian representation.
 GRM~\citep{xu2024grm} predicts 3D Gaussians directly from image features using
 a sparse-view transformer, operating entirely at the pixel level without any
-intermediate NeRF.
-Gamba~\citep{he2024gamba} replaces the transformer with a state-space model
-(Mamba) for $O(N)$ sequence length scaling, enabling long-context 3-D inference.
+intermediate NeRF or triplane representation; this pixel-level prediction
+enables finer spatial resolution in the output Gaussian set.
+Gamba~\citep{he2024gamba} addresses the computational bottleneck of the
+transformer's quadratic attention cost by replacing it with a state-space
+model (Mamba) for $\mathcal{O}(N)$ sequence length scaling, making long-context
+3-D inference from high-resolution inputs feasible.
 GS-LRM~\citep{zhang2024gslrm} combines a transformer backbone with a 3DGS
-output head, achieving state-of-the-art single-image reconstruction quality.
+output head, training on multi-view sequences from Objaverse; it achieves
+state-of-the-art single-image reconstruction quality by jointly training
+the visual encoder and the Gaussian decoder end-to-end on reconstruction quality.
 
-Two non-parametric reconstruction models have recently emerged as strong baselines.
-DUSt3R~\citep{wang2024dust3r} formulates 3-D reconstruction as point-map
-regression: given an image pair, a ViT predicts dense 3-D coordinates for
-every pixel in a shared Euclidean frame, requiring no camera poses at test time.
-MASt3R~\citep{leroy2024mast3r} extends DUSt3R to feature-level matching,
-enabling accurate metric reconstruction from internet-sourced photo pairs.
-These models underpin a new generation of unposed feed-forward reconstructors
-such as Splatt3R~\citep{smart2024splatt3r}, which produces Gaussian splatting
-scenes directly from uncalibrated image pairs.
+Two non-parametric reconstruction models serve as particularly strong baselines
+in the feed-forward regime and additionally underpin the next generation of
+generalised Gaussian reconstructors.
+DUSt3R~\citep{wang2024dust3r} and MASt3R~\citep{leroy2024mast3r}---already
+discussed in the pose-free section---provide unposed pairwise point maps that
+Splatt3R~\citep{smart2024splatt3r} then converts to Gaussian splatting scenes
+via a lightweight attribute prediction head, combining the geometric reliability
+of DUSt3R with the rendering speed and editability of 3DGS.
 
 \paragraph{Implications for World Modeling.}
 LRM-style models demonstrate that a single transformer, with sufficient data
 and compute, can learn a universal spatial prior---the same capacity required
 by world models for instant scene initialisation from single-frame observations.
+This is directly relevant to the world-modeling agenda: a world model that
+must initialise a 3-D scene representation from a single observation
+(a camera frame at the start of a robot episode, or a single photo of a room
+to be manipulated) can leverage the LRM prior to obtain a geometrically coherent
+starting point, rather than requiring dense multi-view capture.
+We return to this connection in Section~\ref{sec:world}.
 
 \subsection{Multi-View Stereo in the Neural Era}
 
 Classical MVS has been reinvigorated by deep learning.
-MVSNet~\citep{yao2018mvsnet} introduced cost-volume-based deep MVS.
+MVSNet~\citep{yao2018mvsnet} introduced cost-volume-based deep MVS, using a
+differentiable homography warping to build a cost volume from multiple reference
+views and predicting per-pixel depth via a 3-D CNN.
 IterMVS~\citep{wang2022itermvs} and Uni-MVSNet~\citep{peng2022unimvsnet}
-improved accuracy and generalisation.
-These methods provide the geometry backbone for downstream NVS, and their
-cost-volume feature matching is directly incorporated into generalizable NeRF
+improved accuracy and generalisation through iterative GRU-based refinement and
+unified feature matching, respectively.
+These methods provide the geometry backbone for downstream NVS: their
+cost-volume feature matching is directly incorporated into generalisable NeRF
 (MVSNeRF~\citep{chen2021mvsnerf}) and feed-forward Gaussian methods
-(MVSplat~\citep{chen2024mvsplat}).
+(MVSplat~\citep{chen2024mvsplat}), establishing a productive synergy between
+the classical MVS and neural NVS communities that continues to be productive.
 
 % ─────────────────────────────────────────────────────────────────────────────

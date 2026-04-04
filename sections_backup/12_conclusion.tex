@@ -1,50 +1,24 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-This survey has traced the evolution of Novel View Synthesis from its origins
-in image-based rendering through the neural radiance field era, the Gaussian
-Splatting revolution, the emergence of generalisable feed-forward reconstruction,
-and the convergence with generative world modeling.
-The central thesis we have pursued---that \nvs{} is the foundational spatial
-inference engine of Generative World Modeling---finds strong empirical support
-in the recent literature, where the most capable world models (Genie~2,
-Cosmos, ViewCrafter) are distinguished from their predecessors precisely by
-their explicit incorporation of spatial consistency constraints derived from
-the NVS research tradition.
+We have surveyed Novel View Synthesis through the lens of Generative World Modeling,
+tracing the evolution from classical image-based rendering through NeRF,
+3D Gaussian Splatting, feed-forward reconstruction, and diffusion-based synthesis
+toward 4-D world generation.
+Our unified continuous-spectrum taxonomy organises more than 160 methods across
+three axes (input regime, temporal scope, controllability) and makes explicit
+their world-modelling implications.
 
-The unified continuous-spectrum taxonomy we have proposed organises more than
-180 methods along three axes (input regime, temporal scope, controllability)
-and makes explicit their world-modeling implications.
-Viewed through this lens, the history of the field is a systematic expansion
-of coverage along the spectrum: from dense multi-view static reconstruction
-at the origin, through sparse-view and single-image generalisation in the
-middle range, toward the 4-D, action-conditioned, physically plausible
-generation that defines the far end of the spectrum and the open research frontier.
+The field is at an inflection point.
+Spatial grounding from NVS and temporal/action capabilities from world modeling
+are actively converging, as evidenced by systems such as Genie~2, Cosmos,
+ViewCrafter, and the neural driving simulators.
+Closing the geometry--generation trade-off, achieving long-horizon coherence,
+and grounding predictions in physical laws are the primary challenges ahead.
 
-The field is at a genuine inflection point.
-The spatial grounding developed by the NVS community and the temporal and
-action capabilities developed by the world modeling community are actively
-converging, as evidenced by systems such as Genie~2, Cosmos, ViewCrafter,
-and the neural driving simulators reviewed in Section~\ref{sec:world}.
-This convergence is not merely a metaphor: architecturally, the most capable
-recent systems are genuine fusions of explicit 3-D representations and
-large-scale video generation priors, combining the geometric accuracy of
-the former with the coverage and controllability of the latter.
-
-Closing the geometry--generation trade-off, achieving long-horizon temporal
-coherence, and grounding predictions in physical laws are the three primary
-technical challenges ahead.
-The five research directions proposed in Section~\ref{sec:open} represent
-our assessment of the most productive paths to addressing these challenges.
-Progress along these directions will not only advance the field of \nvs{}
-and world modeling in isolation, but will also enable downstream capabilities
-in autonomous driving, robotic manipulation, and interactive AI agents that
-require the ability to reason about and generate plausible futures of the
-physical world.
-
-The survey is an ongoing work.
-Content will be further expanded and updated as the field continues to
-evolve at its current rapid pace.
+\medskip
+\noindent\textit{Draft v0.9---ongoing work.
+Content will be further expanded in subsequent versions.}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \bibliographystyle{plainnat}
@@ -1856,7 +1830,6 @@ Animatable gaussians: Learning pose-dependent gaussian maps for high-fidelity
 human avatar modeling.
 In \emph{CVPR}, 2024.
 
-
 % ── Indoor / SLAM ────────────────────────────────────────────────────────────
 
 \bibitem{azinovic2022neural}
@@ -1961,6 +1934,12 @@ In \emph{CVPR}, 2024.
 S.~Chen \etal
 {GaussianWorld}: Gaussian world model for streaming 3-D occupancy prediction.
 \emph{arXiv:2412.10373}, 2024.
+
+\bibitem{zhou2024feature3dgs}
+S.~Zhou \etal
+{Feature 3DGS}: Supercharging 3{D} gaussian splatting to enable distilled
+feature fields.
+In \emph{CVPR}, 2024.
 
 \bibitem{niemeyer2022regnerf}
 M.~Niemeyer \etal
@@ -2200,6 +2179,18 @@ Y.~Bao, S.~Zheng, M.~Zhao, X.~Liu, H.~Feng, D.~Shen, S.~Ji, and P.-A. Heng.
 Test-time training for 3{D} scene completion.
 \emph{arXiv:2404.09882}, 2024.
 
+% Sparse view 3DGS
+\bibitem{zhu2024fsgs_v2}
+Z.~Zhu, Z.~Fan, Y.~Jiang, and Z.~Wang.
+{FSGS}: Real-time few-shot view synthesis using Gaussian splatting.
+In \emph{ECCV}, 2024.
+
+% Generalizable 3DGS
+\bibitem{chen2024mvsplat_v2}
+Y.~Chen, H.~Xu, C.~Zheng, B.~Zhuang, M.~Pollefeys, A.~Geiger, T.-J. Cham, and J.~Cai.
+{MVSplat}: Efficient 3{D} Gaussian splatting from sparse multi-view images.
+In \emph{ECCV}, 2024.
+
 % SLAM with 3DGS
 \bibitem{yugay2023gaussianslam}
 V.~Yugay, Y.~Li, T.~Gevers, and M.~R. Oswald.
@@ -2217,6 +2208,12 @@ In \emph{ECCV}, 2024.
 B.~Wen, L.~Fan, S.~Ji, L.~Li, D.~Zhao, D.~Li, and Y.~Fan.
 3{D} scene generation: A survey.
 \emph{arXiv:2505.05474}, 2025.
+
+% Human-centric
+\bibitem{wang2024humannerf_edit}
+T.~Wang, J.~Xu, G.~Lin, and S.-H. Ong.
+{HumanNeRF} editing and novel view synthesis.
+\emph{arXiv:2305.17065}, 2023.
 
 % COLMAP-free reconstruction
 \bibitem{fu2024colmapfree3dgs}
@@ -2236,23 +2233,35 @@ X.~Wang \etal
 Generative novel view synthesis with 3{D}-aware diffusion models.
 In \emph{ICCV}, 2023.
 
+% Stable Zero123
+\bibitem{liu2023stablezero123}
+R.~Liu, B.~Wu, B.~Van Hoorick, P.~Tokmakov, S.~Zakharov, and C.~Vondrick.
+Zero-1-to-3: Zero-shot one image to 3{D} object.
+In \emph{ICCV}, 2023.
+
 % One-2-3-45++
 \bibitem{onetwothreepp2024}
 Y.~Liu, C.~Lin, Z.~Zeng, X.~Long, L.~Liu, T.~Komura, and W.~Wang.
 One-2-3-45++: Fast single image to 3{D} objects with consistent multi-view generation and 3{D} diffusion.
 In \emph{CVPR}, 2024.
 
-% SV3D orbital
+% Instant3D
 \bibitem{voleti2024sv3d_v2}
 V.~Voleti, C.-H. Lin, Y.-C. Liu, C.-W. Lee, G.~Bhatt, J.~Tan, S.~Gao, J.~Tashiro, A.~Konar, and A.~Ramesh.
 {SV3D}: Novel multi-view synthesis and 3{D} generation from a single image using latent video diffusion.
 In \emph{ECCV}, 2024.
 
-% DreamGaussian
+% EmerNeRF
 \bibitem{tang2024dreamgaussian}
 J.~Tang, J.~Ren, H.~Zhou, Z.~Liu, and G.~Zeng.
 {DreamGaussian}: Generative Gaussian splatting for efficient 3{D} content creation.
 In \emph{ICLR}, 2024.
+
+% GaussianEditor
+\bibitem{chen2024gaussianedit}
+Y.~Chen, Z.~Chen, C.~Zhang, F.~Wang, X.~Yang, and H.~Xu.
+{GaussianEditor}: Swift and controllable 3{D} editing with Gaussian splatting.
+In \emph{CVPR}, 2024.
 
 % Feature3DGS
 \bibitem{zhou2024feature3dgs_v2}
@@ -2290,6 +2299,18 @@ H.~Yu, S.~Wang, Y.~Shen, Y.~Rao, B.~Dai, and L.~Lin.
 {WonderJourney}: Going from anywhere to everywhere.
 In \emph{CVPR}, 2024.
 
+% GaussianWorld / scene synthesis
+\bibitem{yan2024gaussianworld}
+Z.~Yan, Q.~Gao, Z.~Chen, S.~Liu, and Y.~Li.
+{GaussianWorld}: Gaussian world model for streaming 3{D} occupancy prediction.
+\emph{arXiv:2412.10373}, 2024.
+
+% Waymo Open Dataset
+\bibitem{sun2020waymo_v2}
+P.~Sun \etal
+Scalability in perception for autonomous driving: {Waymo} open dataset.
+In \emph{CVPR}, 2020.
+
 % DUSt3R (no duplicates)
 \bibitem{wang2024dust3r_v2}
 S.~Wang, V.~Leroy, Y.~Cabon, B.~Chidlovskii, and J.~Revaud.
@@ -2326,11 +2347,23 @@ J.~Lorraine, K.~Xie, X.~Zeng, C.-H. Lin, T.~Takikawa, N.~Sharp, T.-Y. Lin, M.-Y.
 {ATT3D}: Amortised text-to-3{D} object synthesis.
 In \emph{ICCV}, 2023.
 
+% CRM large 3d model
+\bibitem{wang2024crm_v2}
+Z.~Wang, Y.~Chen, C.~Long, Y.~Gu, Y.~Wang, and C.~Qian.
+{CRM}: Single image to 3{D} textured mesh with convolutional reconstruction model.
+\emph{arXiv:2403.05034}, 2024.
+
 % GAMBA / 3DGS + Mamba
 \bibitem{he2024gamba_v2}
 Q.~He, G.~Li, C.~Xu, and C.~Chen.
 {GAMBA}: Marry Gaussian splatting with Mamba for single view 3{D} reconstruction.
 \emph{arXiv:2403.18795}, 2024.
+
+% Video generation for world models
+\bibitem{meng2024world_survey}
+R.~Mendonca, S.~Bahl, and D.~Pathak.
+Structured world models from human videos.
+In \emph{RSS}, 2023.
 
 % UniDrive World Model
 \bibitem{xiong2026unidrive}
@@ -2350,6 +2383,12 @@ Z.~Wang, Z.~Yuan, X.~Wang, T.~Chen, M.~Xia, P.~Luo, and W.~Liu.
 {MotionCtrl}: A unified and flexible motion controller for video generation.
 In \emph{SIGGRAPH}, 2024.
 
+% CameraCtrl
+\bibitem{he2024cameractrl_v2}
+H.~He, Y.~Yao, K.~Ma, Y.~Chen, Q.~Liu, J.~Snell, and H.~Li.
+{CameraCtrl}: Enabling camera control for video diffusion models.
+\emph{arXiv:2404.02101}, 2024.
+
 % Wan 2.1 / video diffusion
 \bibitem{wan2025wan}
 {Wan Team}.
@@ -2368,6 +2407,12 @@ Z.~Xie, D.~Littlewood, T.~White, Y.~Huang, E.~Chan, and R.~Suppe.
 {SV4D}: Dynamic 3{D} content generation with multi-frame and multi-view consistency.
 \emph{arXiv:2407.04940}, 2024.
 
+% 4DiM
+\bibitem{watson2024_4dim_v2}
+D.~Watson, W.~Chan, D.~Martin-Brualla, J.~Ho, A.~Tagliasacchi, and M.~Norouzi.
+Novel view synthesis with diffusion models.
+In \emph{ICLR}, 2023.
+
 % Consistent4D
 \bibitem{jiang2024consistent4d_v2}
 J.~Jiang, H.~Wang, Y.~Liu, H.~Su, and L.~Guibas.
@@ -2379,6 +2424,12 @@ In \emph{ICLR}, 2024.
 J.~Zhang, C.~Wan, Q.~Zhang, Z.~Zhao, J.~Ma, and H.~Fu.
 {Text2NeRF}: Text-driven 3{D} scene generation with neural radiance fields.
 \emph{IEEE Transactions on Visualization and Computer Graphics}, 2024.
+
+% SuGaR mesh
+\bibitem{guedon2024sugar_v2}
+G.~Gu\'{e}don and V.~Lepetit.
+{SuGaR}: Surface-aligned Gaussian splatting for efficient 3{D} mesh reconstruction and real-time rendering.
+In \emph{CVPR}, 2024.
 
 % 2DGS
 \bibitem{huang20242dgs}
@@ -2396,6 +2447,12 @@ In \emph{SIGGRAPH Asia}, 2024.
 \bibitem{lu2024scaffoldgs}
 T.~Lu, M.~Yu, L.~Xu, Y.~Xiangli, L.~Wang, D.~Lin, and B.~Dai.
 Scaffold-{GS}: Structured 3{D} Gaussians for view-adaptive rendering.
+In \emph{CVPR}, 2024.
+
+% GSDF / geometry-surfels
+\bibitem{yu2024mipsplat_v2}
+Z.~Yu, A.~Chen, B.-J. Huang, T.~Salzmann, and A.~Geiger.
+Mip-Splatting: Alias-free 3{D} Gaussian splatting.
 In \emph{CVPR}, 2024.
 
 % Robo / Manipulation
@@ -2434,6 +2491,18 @@ T.~Brooks, A.~Holynski, and A.~A. Efros.
 {InstructPix2Pix}: Learning to follow image editing instructions.
 In \emph{CVPR}, 2023.
 
+% World models review / LeCun
+\bibitem{lecun2022path_v2}
+Y.~LeCun.
+A path towards autonomous machine intelligence.
+\emph{OpenReview}, 2022.
+
+% Dreamer world model
+\bibitem{ha2018worldmodels_v2}
+D.~Ha and J.~Schmidhuber.
+World models.
+\emph{arXiv:1803.10122}, 2018.
+
 % DreamerV3
 \bibitem{hafner2023dreamerv3_v2}
 D.~Hafner, J.~Lillicrap, J.~Norouzi, and M.~Riedmiller.
@@ -2446,11 +2515,29 @@ D.~Hafner, J.~Lillicrap, J.~Norouzi, and M.~Riedmiller.
 Sora: Creating video from text.
 \emph{Technical Report}, 2024.
 
+% 4DGS deformation-based
+\bibitem{yang2024deformable4dgs}
+Z.~Yang, X.~Gao, W.~Zhou, S.~Jiao, Y.~Zhang, and X.~Jin.
+Deformable 3{D} Gaussians for high-fidelity monocular dynamic scene reconstruction.
+In \emph{CVPR}, 2024.
+
 % Spacetime Gaussians
 \bibitem{li2024spacetime}
 Z.~Li, Z.~Chen, Z.~Li, and S.~Xu.
 Spacetime Gaussian feature splatting for real-time dynamic view synthesis.
 In \emph{CVPR}, 2024.
+
+% 4D-GS
+\bibitem{wu2024_4dgs_v2}
+G.~Wu, T.~Yi, J.~Fang, L.~Xie, X.~Zhang, W.~Wei, W.~Liu, Q.~Tian, and X.~Wang.
+4{D} Gaussian splatting for real-time dynamic scene rendering.
+In \emph{CVPR}, 2024.
+
+% DG4D / SV4D view synthesis
+\bibitem{xie2024sv4d_official}
+Z.~Xie \etal
+{SV4D}: Dynamic 3{D} content generation with multi-frame and multi-view consistency.
+\emph{arXiv:2407.04940}, 2024.
 
 % CogVideoX
 \bibitem{yang2024cogvideox_v2}
@@ -2458,87 +2545,7 @@ Z.~Yang \etal
 {CogVideoX}: Text-to-video diffusion models with an expert transformer.
 \emph{arXiv:2408.06072}, 2024.
 
-% Waymo Open Dataset
-\bibitem{sun2020waymo_v2}
-P.~Sun \etal
-Scalability in perception for autonomous driving: {Waymo} open dataset.
-In \emph{CVPR}, 2020.
 
-% GaussianWorld / scene synthesis
-\bibitem{yan2024gaussianworld}
-Z.~Yan, Q.~Gao, Z.~Chen, S.~Liu, and Y.~Li.
-{GaussianWorld}: Gaussian world model for streaming 3{D} occupancy prediction.
-\emph{arXiv:2412.10373}, 2024.
-
-\bibitem{wang2024crm_v2}
-Z.~Wang, Y.~Chen, C.~Long, Y.~Gu, Y.~Wang, and C.~Qian.
-{CRM}: Single image to 3{D} textured mesh with convolutional reconstruction model.
-\emph{arXiv:2403.05034}, 2024.
-
-\bibitem{yu2024mipsplat_v2}
-Z.~Yu, A.~Chen, B.-J. Huang, T.~Salzmann, and A.~Geiger.
-Mip-Splatting: Alias-free 3{D} Gaussian splatting.
-In \emph{CVPR}, 2024.
-
-\bibitem{meng2024world_survey}
-R.~Mendonca, S.~Bahl, and D.~Pathak.
-Structured world models from human videos.
-In \emph{RSS}, 2023.
-
-\bibitem{wang2024humannerf_edit}
-T.~Wang, J.~Xu, G.~Lin, and S.-H. Ong.
-{HumanNeRF} editing and novel view synthesis.
-\emph{arXiv:2305.17065}, 2023.
-
-\bibitem{zhu2024fsgs_v2}
-Z.~Zhu, Z.~Fan, Y.~Jiang, and Z.~Wang.
-{FSGS}: Real-time few-shot view synthesis using Gaussian splatting.
-In \emph{ECCV}, 2024.
-
-\bibitem{chen2024mvsplat_v2}
-Y.~Chen, H.~Xu, C.~Zheng, B.~Zhuang, M.~Pollefeys, A.~Geiger, T.-J. Cham, and J.~Cai.
-{MVSplat}: Efficient 3{D} Gaussian splatting from sparse multi-view images.
-In \emph{ECCV}, 2024.
-
-\bibitem{xie2024sv4d_official}
-Z.~Xie \etal
-{SV4D}: Dynamic 3{D} content generation with multi-frame and multi-view consistency.
-\emph{arXiv:2407.04940}, 2024.
-
-\bibitem{yang2024deformable4dgs}
-Z.~Yang, X.~Gao, W.~Zhou, S.~Jiao, Y.~Zhang, and X.~Jin.
-Deformable 3{D} Gaussians for high-fidelity monocular dynamic scene reconstruction.
-In \emph{CVPR}, 2024.
-
-\bibitem{watson2024_4dim_v2}
-D.~Watson, W.~Chan, D.~Martin-Brualla, J.~Ho, A.~Tagliasacchi, and M.~Norouzi.
-Novel view synthesis with diffusion models.
-In \emph{ICLR}, 2023.
-
-\bibitem{lecun2022path_v2}
-Y.~LeCun.
-A path towards autonomous machine intelligence.
-\emph{OpenReview}, 2022.
-
-\bibitem{ha2018worldmodels_v2}
-D.~Ha and J.~Schmidhuber.
-World models.
-\emph{arXiv:1803.10122}, 2018.
-
-\bibitem{chen2024gaussianedit}
-Y.~Chen, Z.~Chen, C.~Zhang, F.~Wang, X.~Yang, and H.~Xu.
-{GaussianEditor}: Swift and controllable 3{D} editing with Gaussian splatting.
-In \emph{CVPR}, 2024.
-
-\bibitem{he2024cameractrl_v2}
-H.~He, Y.~Yao, K.~Ma, Y.~Chen, Q.~Liu, J.~Snell, and H.~Li.
-{CameraCtrl}: Enabling camera control for video diffusion models.
-\emph{arXiv:2404.02101}, 2024.
-
-\bibitem{yugay2023gaussianslam}
-V.~Yugay, Y.~Li, T.~Gevers, and M.~R. Oswald.
-{Gaussian-SLAM}: Photo-realistic dense {SLAM} with Gaussian splatting.
-\emph{arXiv:2312.10070}, 2023.
 
 \end{thebibliography}
 

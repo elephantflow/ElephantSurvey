@@ -1,0 +1,181 @@
+\section{3D Gaussian Splatting}
+\label{sec:3dgs}
+
+\subsection{Foundational 3DGS}
+
+3DGS~\citep{kerbl2023gaussian} achieved real-time ($>$100\,fps at 1080p)
+NVS with training times of 30--45 minutes on commodity hardware,
+surpassing NeRF-quality baselines on standard benchmarks.
+Its three key innovations are:
+(i)~anisotropic Gaussian primitives that align naturally with planar scene
+structures;
+(ii)~tile-based rasterisation that enables massively parallel GPU rendering;
+(iii)~adaptive densification that automatically allocates capacity to
+under-reconstructed regions.
+The resulting representation is fully explicit and editable, opening new
+directions in scene editing, simulation, and avatar rendering.
+
+\paragraph{Quality and anti-aliasing.}
+Mip-Splatting~\citep{yu2024mipsplatting} identifies aliasing in vanilla 3DGS
+as arising from the approximation of 3-D Gaussian convolution during 2-D
+projection.
+It introduces a 3-D smoothing filter derived from the sampling footprint,
+enabling accurate multi-scale rendering and substantially reducing floaters
+at large distances.
+AbsGS~\citep{ye2024absgs} revisits the densification criterion: replacing
+the mean gradient with an absolute-value measure improves coverage in
+thin structures and reduces needle-like artifacts near object boundaries.
+
+\paragraph{Compression and memory efficiency.}
+A single 3DGS scene may require 300MB--1GB of storage, limiting deployment.
+Scaffold-GS~\citep{lu2023scaffoldgs} introduces a sparse set of anchor
+primitives from which neural networks predict neighbouring Gaussian attributes;
+this structured representation reduces storage by $3$--$5\times$ with
+comparable quality.
+LightGaussian~\citep{fan2023lightgaussian} achieves $15\times$ compression via
+global Gaussian pruning based on visibility contribution and subsequent
+vector quantisation of attributes.
+EAGLES~\citep{girish2024eagles} applies residual vector quantisation
+for fine-grained attribute compression.
+HAC~\citep{chen2024hac} proposes a hash-grid-based context model that predicts
+per-Gaussian attribute entropy, enabling learned arithmetic coding for
+extreme compression ratios.
+
+\paragraph{Surface reconstruction.}
+SuGaR~\citep{guedon2024sugar} aligns Gaussians to the scene surface by adding
+a regularisation term that encourages Gaussians to become flat discs at
+the surface, followed by mesh extraction and joint Gaussian--mesh refinement.
+2DGS~\citep{huang2024_2dgs} replaces 3-D Gaussians with 2-D disc primitives,
+which by construction lie on surfaces and produce accurate normal maps.
+Gaussian Opacity Fields~(GOF)~\citep{yu2024gof} fuses Gaussian Splatting with
+a continuous opacity field for topologically correct surface extraction in
+unbounded scenes.
+
+\paragraph{Scene editing and compositionality.}
+The explicit Gaussian representation is particularly amenable to editing:
+individual primitives can be identified, moved, duplicated, or removed.
+GaussianEditor~\citep{chen2024gaussianeditor} harnesses a large vision-language
+model to select semantically relevant Gaussians from a text description and
+optimises their appearance with a diffusion prior.
+Gaussian Grouping~\citep{ye2023gaussian_grouping} augments each Gaussian with
+a learned identity field, trained with SAM~\citep{kirillov2023sam} masks from
+rendered views, enabling instance-level part decomposition and editing.
+GALA3D~\citep{zhou2024gala3d} uses an LLM to generate a 3-D layout from text
+and initialises Gaussians per-object, enabling compositional scene generation.
+
+Table~\ref{tab:3dgs_methods} provides a comprehensive view of the 3DGS family.
+
+\begin{table*}[t]
+  \centering
+  \caption{Comprehensive 3D Gaussian Splatting method comparison.
+    \textbf{Category}: STATIC=per-scene static, DYN=dynamic/deformable, FF=feed-forward generalizable.
+    \textbf{RT}: real-time rendering ($>$30\,fps).
+    \textbf{Comp.}: dedicated compression or storage reduction.
+    \textbf{Surf.}: explicit surface extraction.
+    \textbf{Unp.}: works on unposed images.
+    \textbf{Input}: minimum input views for FF methods.}
+  \label{tab:3dgs_methods}
+  \scriptsize
+  \setlength{\tabcolsep}{2.8pt}
+  \begin{tabular}{@{}llcccccccp{3.8cm}@{}}
+    \toprule
+    \textbf{Method} & \textbf{Venue} & \textbf{Cat.}
+      & \textbf{RT} & \textbf{Comp.} & \textbf{Surf.}
+      & \textbf{Edit.} & \textbf{Unp.} & \textbf{Input}
+      & \textbf{Key Contribution} \\
+    \midrule
+    \multicolumn{10}{@{}l}{\textit{Static per-scene}} \\
+    3DGS~\citep{kerbl2023gaussian}               & TOG'23      & S & \yes& \no & \no & \no & \no & MV  & Tile-based Gaussian splatting \\
+    Mip-Splatting~\citep{yu2024mipsplatting}     & CVPR'24     & S & \yes& \no & \no & \no & \no & MV  & 3-D smoothing filter, anti-alias \\
+    AbsGS~\citep{ye2024absgs}                    & NeurIPS'24  & S & \yes& \no & \no & \no & \no & MV  & Absolute-gradient densification \\
+    Scaffold-GS~\citep{lu2023scaffoldgs}         & CVPR'24     & S & \yes& \yes& \no & \no & \no & MV  & Anchor-driven neural attributes \\
+    LightGaussian~\citep{fan2023lightgaussian}   & NeurIPS'23  & S & \yes& \yes& \no & \no & \no & MV  & Visibility pruning + VQ, 15$\times$ \\
+    Compact3D~\citep{lee2024compact3d}           & arXiv'24    & S & \yes& \yes& \no & \no & \no & MV  & k-means codebook compression \\
+    EAGLES~\citep{girish2024eagles}              & ECCV'24     & S & \yes& \yes& \no & \no & \no & MV  & Residual vector quantisation \\
+    HAC~\citep{chen2024hac}                      & ECCV'24     & S & \yes& \yes& \no & \no & \no & MV  & Hash context entropy coding \\
+    SuGaR~\citep{guedon2024sugar}                & CVPR'24     & S & \yes& \no & \yes& \pt & \no & MV  & Flat-disc + mesh joint opt. \\
+    2DGS~\citep{huang2024_2dgs}                  & SIGGRAPH'24 & S & \yes& \no & \yes& \no & \no & MV  & 2-D disc primitives \\
+    GOF~\citep{yu2024gof}                        & arXiv'24    & S & \yes& \no & \yes& \no & \no & MV  & Opacity field for surface \\
+    GaussianEditor~\citep{chen2024gaussianeditor} & CVPR'24    & S & \yes& \no & \no & \yes& \no & MV  & LLM-guided semantic editing \\
+    Gaussian Grouping~\citep{ye2023gaussian_grouping}& ECCV'24  & S & \yes& \no & \no & \yes& \no & MV  & SAM-based identity field \\
+    GALA3D~\citep{zhou2024gala3d}                & ICML'24     & S & \yes& \no & \no & \yes& \no & MV  & LLM-layout compositional gen. \\
+    LERF~\citep{kerr2023lerf}                    & ICCV'23     & S & \no & \no & \no & \pt & \no & MV  & CLIP language grounding in NeRF \\
+    LangSplat~\citep{qin2024langsplat}           & CVPR'24     & S & \yes& \no & \no & \pt & \no & MV  & Language field in 3DGS \\
+    \midrule
+    \multicolumn{10}{@{}l}{\textit{Dynamic \& deformable}} \\
+    4DGS~\citep{wu2024_4dgs}                     & CVPR'24     & D & \yes& \no & \no & \no & \no & MV  & 4-D Gaussian + temporal field \\
+    Deformable3DGS~\citep{yang2024deformable}    & ICLR'24     & D & \yes& \no & \no & \no & \no & Mono& Canonical deformation network \\
+    SpacetimeGaussians~\citep{yang2024spacetime} & CVPR'24     & D & \yes& \no & \no & \no & \no & MV  & Polynomial time trajectories \\
+    SC-GS~\citep{huang2024scgs}                  & CVPR'24     & D & \yes& \no & \no & \no & \no & Mono& Sparse control point deform. \\
+    Gaussian-Flow~\citep{lin2024gaussianflow}    & CVPR'24     & D & \yes& \no & \no & \no & \no & MV  & Fourier polynomial motion \\
+    Shape-of-Motion~\citep{wang2024shapeofmotion}& arXiv'24    & D & \no & \no & \no & \no & \no & Mono& Per-Gaussian 3-D motion \\
+    Dynamic 3DGS~\citep{luiten2024dynamic3dgs}   & 3DV'24      & D & \yes& \no & \no & \no & \no & MV  & Persistent Gaussian tracking \\
+    GauFRe~\citep{liang2024gaufre}               & arXiv'24    & D & \yes& \no & \no & \no & \no & Mono& Flow-regularised deformation \\
+    MoVieS~\citep{sun2024movies}                 & arXiv'24    & D & \yes& \no & \no & \no & \no & Mono& 4-D synthesis in $\sim$1 second \\
+    SC-4D~\citep{kim2024selfcal4d}               & arXiv'24    & D & \no & \no & \no & \no & \no & Mono& Self-calibrating 4-D from video \\
+    Reconstruct-Inpaint~\citep{han2024rif}       & arXiv'24    & D & \no & \no & \no & \no & \no & Mono& Recon + inpaint + TTF pipeline \\
+    Articulated-GS~\citep{li2024articulatedgs}   & NeurIPS'24  & D & \yes& \no & \no & \no & \no & MV  & Template-free articulated 3DGS \\
+    EVA-Gaussian~\citep{hu2024evacg}             & arXiv'24    & D & \yes& \no & \no & \no & \no & MV  & Real-time human NVS \\
+    \midrule
+    \multicolumn{10}{@{}l}{\textit{Feed-forward generalizable}} \\
+    pixelSplat~\citep{charatan2024pixelsplat}    & CVPR'24     & FF& \yes& \no & \no & \no & \no & 2   & Stereo epipolar features \\
+    MVSplat~\citep{chen2024mvsplat}              & ECCV'24     & FF& \yes& \no & \no & \no & \no & 2--6& Cost-volume geometry prior \\
+    TranSplat~\citep{zhang2024transplate}        & arXiv'24    & FF& \yes& \no & \no & \no & \no & 2+  & Transformer MV prediction \\
+    FSGS~\citep{zhu2024fsgs}                     & CVPR'24     & FF& \yes& \no & \no & \no & \no & 3   & Gaussian unpooling, few-shot \\
+    DepthSplat~\citep{xu2024depthsplat}          & arXiv'24    & FF& \yes& \no & \no & \no & \no & 2+  & Joint depth + Gaussian pred. \\
+    Splatt3R~\citep{smart2024splatt3r}           & arXiv'24    & FF& \yes& \no & \no & \no & \yes& 2   & DUSt3R backbone, unposed \\
+    TriplaneGaussian~\citep{zou2024triplanegaussian}& CVPR'24   & FF& \yes& \no & \no & \no & \no & 1   & Triplane + Gaussian, single-view \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\subsection{Dynamic 3DGS}
+
+4DGS~\citep{wu2024_4dgs} extends Gaussians into 4-D space-time with a
+temporal radiance field.
+SpacetimeGaussians~\citep{yang2024spacetime} assigns polynomial time
+trajectories to each Gaussian.
+Deformable3DGS~\citep{yang2024deformable} applies a deformation network to
+canonical Gaussians.
+SC-GS~\citep{huang2024scgs} uses sparse control points for monocular dynamic
+scenes.
+Gaussian-Flow~\citep{lin2024gaussianflow} models Gaussian dynamics via
+polynomial motion fields in Fourier space.
+Shape-of-Motion~\citep{wang2024shapeofmotion} reconstructs per-Gaussian 3-D
+motion from monocular videos.
+Dynamic 3D Gaussians~\citep{luiten2024dynamic3dgs} tracks scene dynamics
+through persistent Gaussian views, jointly optimising NVS and tracking.
+GauFRe~\citep{liang2024gaufre} uses Gaussian deformation fields with
+flow regularisation for real-time dynamic NVS.
+MoVieS~\citep{sun2024movies} generates motion-aware 4-D dynamic views in
+approximately one second via efficient Gaussian motion estimation.
+Self-Calibrating 4D~\citep{kim2024selfcal4d} performs 4-D NVS from monocular
+videos by jointly estimating camera parameters and Gaussian deformations.
+Reconstruct-Inpaint-Finetune~\citep{han2024rif} addresses dynamic monocular
+NVS via a three-stage pipeline of reconstruction, inpainting, and test-time
+refinement.
+EVA-Gaussian~\citep{hu2024evacg} achieves real-time human NVS under diverse
+multi-view settings.
+Articulated Gaussian~\citep{li2024articulatedgs} enables template-free
+articulated Gaussian Splatting for real-time reposable dynamic view synthesis.
+
+\subsection{Feed-Forward Generalizable 3DGS}
+
+pixelSplat~\citep{charatan2024pixelsplat} predicts Gaussian primitives from
+stereo image pairs in a single forward pass.
+MVSplat~\citep{chen2024mvsplat} adds cost-volume priors for better geometry.
+TranSplat~\citep{zhang2024transplate} introduces a transformer architecture for
+multi-view Gaussian prediction.
+Splatt3R~\citep{smart2024splatt3r} builds on DUSt3R~\citep{wang2024dust3r}
+for unposed image pairs.
+FSGS~\citep{zhu2024fsgs} enables few-shot Gaussian Splatting via Gaussian
+unpooling and monocular depth supervision.
+DepthSplat~\citep{xu2024depthsplat} jointly predicts depth and Gaussians
+for generalizable NVS.
+TriplaneGaussian~\citep{zou2024triplanegaussian} combines triplane and
+Gaussian representations in a transformer-based single-view reconstruction model.
+
+The feed-forward generalizable methods are included in the comprehensive
+Table~\ref{tab:3dgs_methods} above (FF category).
+
+% ─────────────────────────────────────────────────────────────────────────────

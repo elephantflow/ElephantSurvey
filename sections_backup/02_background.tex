@@ -1,17 +1,6 @@
 \section{Background and Unified Formulation}
 \label{sec:background}
 
-To appreciate the trajectory from classical image-based rendering to generative
-world modeling, one must first understand the foundational representations and
-rendering equations that all subsequent work builds upon.
-This section establishes the mathematical vocabulary and the key historical
-milestones that shaped the field.
-We begin with classical image-based rendering, which revealed the fundamental
-connection between captured images and 3-D light transport; we then
-introduce the two dominant neural representations, NeRF and 3DGS; and we
-conclude with a unified formulation that encompasses both \nvs{} and world modeling
-as instances of a single conditional generation problem.
-
 \subsection{Classical Image-Based Rendering}
 
 Before the neural era, \nvs{} was approached through
@@ -19,11 +8,6 @@ Before the neural era, \nvs{} was approached through
 The foundational insight is that images directly encode light transport:
 sufficiently dense sampling of the plenoptic function~\citep{adelson1991plenoptic}
 permits view interpolation without reasoning about explicit 3-D geometry.
-While this observation has proved remarkably durable---modern diffusion-based
-methods are, in a sense, learned plenoptic function approximators---the classical
-IBR literature also revealed the core bottleneck that motivated neural approaches:
-quality degrades sharply when the target viewpoint lies far outside the convex
-hull of captured cameras.
 
 Light Field Rendering~\citep{levoy1996light} and the Lumigraph~\citep{gortler1996lumigraph}
 parameterise the light field on a two-plane slab, enabling photo-realistic view
@@ -31,21 +15,18 @@ interpolation within the captured light-field volume.
 View interpolation~\citep{chen1993view} warps and blends reference images
 using depth estimates, anticipating modern depth-based view synthesis.
 Unstructured Lumigraphs and view-dependent texture mapping~\citep{debevec1996modeling}
-relaxed capture requirements to unstructured camera sets, foreshadowing the
-transition toward casual capture settings.
-The geometry-estimation pipeline of Structure from Motion~(SfM)~\citep{schoenberger2016sfm}
-and Multi-View Stereo~(MVS)~\citep{schonberger2016mvs} remains, to this day,
-the standard preprocessing step for all pose-conditioned \nvs{} methods that
-require calibrated cameras.
+relaxed capture requirements to unstructured camera sets.
+Structure from Motion~(SfM)~\citep{schoenberger2016sfm} and
+Multi-View Stereo~(MVS)~\citep{schonberger2016mvs} established the
+geometry-estimation pipeline that underlies all pose-conditioned \nvs{} to this day.
 
 The fundamental limitation of classical IBR is the requirement for
 \emph{dense} capture: interpolation quality degrades rapidly as target
 viewpoints move beyond the convex hull of the observed camera set.
 Furthermore, these methods produce no compact scene model---each novel view
-requires querying the full set of reference images at inference time, making
-them ill-suited for real-time or storage-constrained applications.
+requires querying the full set of reference images at inference time.
 The desire for compact, generalisable scene representations drove the
-development of neural radiance fields, which we introduce next.
+development of neural radiance fields.
 
 \subsection{Volume Rendering and NeRF}
 
@@ -69,14 +50,9 @@ coarse and fine networks, concentrating samples near the visible surface.
 
 NeRF's key properties---implicit representation, continuous differentiability,
 and view-dependent appearance via directional encoding---made it transformative.
-For the first time, a compact neural parameterisation could faithfully reproduce
-complex real scenes with fine specular highlights, transparency, and thin
-structures from a few dozen posed photographs, at a quality that previous
-methods required orders-of-magnitude more captures to achieve.
 Its central limitations are \emph{slow per-scene optimisation} (hours) and
 \emph{per-scene specificity} (no generalisation to unseen scenes), both of which
-the subsequent literature directly addressed through architectural redesign,
-explicit-hybrid representations, and large-scale pretraining.
+the subsequent literature directly addressed.
 
 \subsection{Gaussian Splatting}
 
@@ -100,33 +76,22 @@ An \emph{adaptive densification} strategy clones under-reconstructed Gaussians
 and splits over-large ones, while pruning transparent or redundant primitives.
 
 3DGS achieves real-time rendering ($>$100\,fps at 1080p) with training times
-of tens of minutes---a dramatic improvement over NeRF---primarily because
-rasterisation of 2-D Gaussian splats on a GPU tile grid requires no
-per-pixel ray integration.
+of tens of minutes---a dramatic improvement over NeRF.
 Its explicit, editable representation makes it attractive for downstream
-tasks in scene editing, simulation, and embodied AI, where the ability to
-identify, move, and delete individual scene elements is essential.
-The primary limitations relative to implicit representations are a
-\emph{higher memory footprint} (millions of Gaussians per scene) and
-\emph{limited surface quality} compared to SDF-based methods, both of which
-have been substantially addressed by the large subsequent literature we
-survey in Section~\ref{sec:3dgs}.
+tasks in scene editing, simulation, and embodied AI.
+The primary limitations are \emph{higher memory footprint} (millions of Gaussians
+per scene) and \emph{limited surface quality} compared to SDF-based methods.
+A large subsequent literature has addressed both limitations.
 
 \subsection{Unified NVS and World Modeling Formulation}
 
-We now introduce the formal framework that unifies all methods across the survey.
-Standard \nvs{} can be written as:
+We formulate \nvs{} as a general function:
 \begin{equation}
   \mathcal{M}_\theta:\bigl(\{\mathbf{I}_i,\boldsymbol{\pi}_i\}_{i=1}^n,\;
   \boldsymbol{\pi}^*\bigr)\longrightarrow\hat{\mathbf{I}}^*,
   \quad n\in[1,+\infty).
   \label{eq:nvs}
 \end{equation}
-This formulation covers everything from dense multi-view reconstruction ($n$ large,
-$\mathcal{M}$ an explicit renderer) to single-image generation ($n=1$,
-$\mathcal{M}$ a diffusion model) and unconditioned 3-D generation ($n=0$,
-$\mathcal{M}$ a generative model with a text or noise input).
-
 The world-modeling extension augments this with a time index $t$ and a
 sequence of agent actions $\mathbf{a}_{0:t}$:
 \begin{equation}
@@ -135,20 +100,12 @@ sequence of agent actions $\mathbf{a}_{0:t}$:
   \label{eq:wm}
 \end{equation}
 Eq.~\eqref{eq:nvs} is the special case $t=0$, $\mathbf{a}=\varnothing$.
-The additional terms expose the three axes of the spectrum introduced in
-\S\ref{sec:intro}: controlling $\boldsymbol{\pi}^*$ corresponds to Axis~1
-(input regime); adding the time index $t$ activates Axis~2 (temporal scope);
-and adding $\mathbf{a}$ activates Axis~3 (controllability).
-
 A complete world model satisfying Eq.~\eqref{eq:wm} must fulfil five desiderata,
-which we use as a consistent evaluation lens throughout the survey:
+which we use throughout the survey:
 \textbf{D1}~geometric consistency across viewpoints;
 \textbf{D2}~generalisation from sparse or single-image input;
 \textbf{D3}~dynamic scene modelling;
 \textbf{D4}~action conditioning;
 \textbf{D5}~physical plausibility.
-No single existing method satisfies all five simultaneously---that gap
-defines the central open problem and the research frontier we identify
-in Section~\ref{sec:open}.
 
 % ─────────────────────────────────────────────────────────────────────────────

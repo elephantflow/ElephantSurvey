@@ -1,171 +1,325 @@
 \section{Towards Generative World Modeling}
 \label{sec:world}
 
+The preceding sections have charted the evolution of \nvs{} from per-scene
+NeRF reconstruction to generative, feed-forward synthesis from a single image.
+We now address the central thesis of this survey: how does this progression
+connect to, and ultimately enable, \emph{Generative World Modeling}?
+
+A world model, in the canonical sense introduced by
+Ha~\&~Schmidhuber~\citep{ha2018worldmodels} and formalised by
+LeCun~\citep{lecun2022path}, is a system that predicts the future state of
+the world given a current state and an action.
+Applied to visual, spatial environments, this translates to predicting the
+\emph{visual experience} of an agent as it moves through and interacts with
+a scene.
+The key insight of this survey is that \emph{novel view synthesis is already
+a minimal world model for the camera-action case}: it predicts future visual
+states under camera motion, enforcing geometric consistency without explicit
+physics.
+The challenge is to extend this capability along three additional axes:
+temporal dynamics that extend beyond the current frame,
+agent actions that are richer than camera transforms,
+and physical plausibility that respects real-world causality.
+
+This section surveys how the field is meeting this challenge across four
+interconnected directions: 4-D generation and dynamic scene modelling,
+neural scene simulators for autonomous driving, large-scale world foundation
+models, and embodied AI applications.
+We conclude with a formal capability analysis (Table~\ref{tab:nvs_wm}) that
+maps the axis-by-axis progress and identifies the remaining gaps.
+
 \subsection{Dynamic Scenes and 4-D World Representation}
 
 The step from static \nvs{} to world modeling hinges on modelling
 \emph{temporal dynamics}: how does a scene evolve over time, and can
 the model generate novel views at arbitrary future timestamps?
-The dynamic NeRF and 4DGS methods in §\ref{sec:nerf}--\ref{sec:3dgs}
+The dynamic NeRF and 4DGS methods surveyed in \S\ref{sec:nerf}--\ref{sec:3dgs}
 address this for \emph{observed} scenes given dense multi-view video.
-A harder and more practically relevant regime is \emph{generalizable}
+The harder and more practically relevant regime is \emph{generalisable}
 4-D generation from sparse or single-image input---precisely the regime
 inhabited by world models.
+The key question is whether the powerful 2-D and video priors of large
+diffusion models can be elevated to serve as 4-D world priors.
 
-Video diffusion models have emerged as the most promising backbone.
-ViewCrafter~\citep{yu2024viewcrafter} augments a video diffusion model with
-point-cloud renderings along the target camera trajectory, providing a
-geometric scaffold that constrains the generation while the diffusion prior
-fills in appearance and fine detail.
+Video diffusion models have emerged as the most promising backbone for this
+purpose, because the temporal axis of a video model naturally encodes
+the sequential structure of a scene evolving over time.
+The principal design challenge is coupling the video generation process
+to spatial geometry, so that the generated frames are not merely temporally
+coherent but also \emph{multi-view consistent}---a stronger requirement
+that the pure video generation training objective does not enforce.
+
+ViewCrafter~\citep{yu2024viewcrafter} addresses this coupling through a
+geometric scaffold: it augments a video diffusion model with point-cloud
+renderings along the target camera trajectory, grounding each generated
+frame in the known 3-D structure of the reference scene.
+This scaffold design is principled because it decouples the ``what is the
+geometry'' (answered by the point cloud) from the ``how does it look''
+(answered by the diffusion prior), allowing each component to
+contribute its respective strength.
 CAT4D~\citep{wu2024cat4d} generalises the Cat3D framework to the temporal
 dimension, jointly modelling viewpoint and time with a multi-view video
-diffusion model, then lifting the output to an explicit 4-D representation.
+diffusion model, then lifting the output to an explicit 4-D representation;
+by training jointly over the view and time axes, it learns a shared prior
+that enforces consistency in both dimensions simultaneously.
 4DiM~\citep{watson2024_4dim} takes a more direct approach, training a
 4-D diffusion model that simultaneously denoises a set of frames at
-varying timestamps and viewpoints, learning a joint spatiotemporal prior.
-SV3D~\citep{voleti2024sv3d} and SV4D~\citep{xie2024sv4d} extend Stable
-Video Diffusion to 3-D and 4-D object generation respectively, conditioning
-on orbital camera paths to ensure multi-view consistency.
-Consistent4D~\citep{jiang2024consistent4d} enforces temporal consistency
-across a 4-D cascade, resolving inter-frame Gaussian drift.
-DreamGaussian4D~\citep{ren2023dreamgaussian4d} shows that SDS can be applied
-to 4DGS, enabling text-driven 4-D generation without any video training data.
+varying timestamps and viewpoints, learning a joint spatiotemporal prior
+without relying on a two-stage pipeline.
 
-A complementary line of work addresses the \emph{monocular} case.
+SV3D~\citep{voleti2024sv3d} and SV4D~\citep{xie2024sv4d} extend Stable
+Video Diffusion to 3-D and 4-D object generation respectively by conditioning
+on orbital camera paths; the key observation is that the temporal motion
+prior of a video diffusion model is a strong proxy for the viewpoint
+change prior of a multi-view model when the conditioning signal specifies
+the camera trajectory.
+Consistent4D~\citep{jiang2024consistent4d} enforces temporal consistency
+across a 4-D cascade, resolving inter-frame Gaussian drift that arises
+when each frame of the 4-D Gaussian sequence is optimised independently.
+DreamGaussian4D~\citep{ren2023dreamgaussian4d} demonstrates that SDS can
+be applied to 4DGS, enabling text-driven 4-D generation without any video
+training data, extending the 3-D SDS paradigm to the temporal domain.
+
+Beyond video-diffusion-based approaches, GaussianFlow~\citep{gao2024gaussianflow}
+models 4-D content creation by splatting Gaussian dynamics, providing a
+principled connection between the explicit Gaussian representation and
+fluid-like continuous flow dynamics.
+L4GM~\citep{ren2024l4gm} scales the LRM paradigm to 4-D, training a large
+reconstruction model directly on 4-D data to generate consistent dynamic
+objects from single images in seconds.
+STAG4D~\citep{zeng2024stag4d} introduces spatial-temporal anchored Gaussian
+generation that addresses the long-range consistency failures common in
+4-D generation by anchoring Gaussian clusters to stable spatial positions.
+Diffusion4D~\citep{diffusion4d2024} achieves fast spatial-temporal consistent
+4-D generation via a two-stage video diffusion pipeline, reducing the
+inference time of 4-D generation by an order of magnitude.
+
+A complementary line of work addresses the \emph{monocular} case, where
+only a single camera view is available throughout time.
 Diffusion Priors for Dynamic NVS~\citep{li2024diffpriordynamic} treats the
 diffusion model as a frame-level regulariser during per-scene 4-D optimisation
 from a single monocular video, substantially improving novel-view quality in
-under-constrained regions.
+under-constrained regions by providing a learned hallucination prior that
+fills in views never observed.
+Dynamic View Synthesis from Small Camera Motion~\citep{li2024smallmotion}
+addresses the particularly challenging case where camera motion is small and
+depth cues are minimal, using a generative prior to resolve the depth-motion
+ambiguity.
+
+Taken as a whole, the 4-D generation literature demonstrates that the combined
+signal from spatial consistency (from NVS training) and temporal consistency
+(from video diffusion training) is sufficient to generate plausible 4-D world
+states from sparse input.
+The remaining frontier is \emph{physical grounding}: ensuring that the
+generated dynamics are not just perceptually coherent but also obey physical
+laws---a challenge we return to in \S\ref{sec:open}.
 
 \subsection{Neural Scene Simulators for Autonomous Driving}
 
 Autonomous driving provides a uniquely demanding test-bed for NVS-as-world-model:
 scenes are large-scale, unbounded, and contain independently moving actors
 (vehicles, pedestrians) that must be rendered consistently from closed-loop
-ego-motion trajectories.
-Three architectural strategies have emerged.
+ego-motion trajectories that may deviate substantially from the recorded path.
+The downstream value of accurate simulation is concrete and measurable:
+closed-loop evaluation of autonomous systems requires the ability to replay
+any scenario with arbitrary modifications to weather, traffic density, and
+actor behaviour.
+Three architectural strategies have emerged, representing progressively stronger
+integration between scene representation and generative modelling.
 
 \paragraph{NeRF-based compositional simulators.}
+The first strategy separates the scene into independently-modelled components
+that can be edited and composited.
 MARS~\citep{wu2023mars} separates the scene into a static NeRF background
-and per-agent NeRF foregrounds, allowing independent actor manipulation.
+and per-agent NeRF foregrounds, allowing independent actor manipulation---an
+approach that directly addresses the compositionality requirement of scene
+editing but requires per-instance annotations.
 UniSim~\citep{yang2023unisim} extends this to a closed-loop sensor simulator
-that supports controllable scene editing---removing actors, changing weather,
-inserting novel agents---with photorealistic rendering at the ego sensor.
-EmerNeRF~\citep{yang2023emernerf} learns the dynamic-static decomposition
-in a self-supervised manner by decomposing scene flow from multi-camera video,
-without per-actor instance labels.
+that supports controllable scene editing (removing actors, changing weather,
+inserting novel agents) with photorealistic rendering at the ego sensor,
+demonstrating that a compositional NeRF scene model can serve as a full
+sensor simulation system.
+EmerNeRF~\citep{yang2023emernerf} removes the requirement for per-actor
+annotations by learning the dynamic-static decomposition in a self-supervised
+manner from scene flow estimated via multi-camera video; this is an important
+step toward scalable scene decomposition that does not require expensive
+human labelling.
 
 \paragraph{3DGS-based driving reconstruction.}
+The second strategy replaces NeRF with Gaussian Splatting, inheriting its
+real-time rendering advantage, which is critical for closed-loop simulation
+at scale.
 Street Gaussians~\citep{yan2024streetgaussian} extends 3DGS to urban scenes
 by representing tracked foreground objects with separate Gaussian models and
-compositing them over a background Gaussian field.
+compositing them over a background Gaussian field; the per-object Gaussian
+decomposition supports instance-level editing without re-training the full
+scene model.
 PVG~\citep{chen2023pvg} models Gaussian motion with periodic vibration functions
-that efficiently encode slow, cyclic motions common in urban traffic.
-OmniRe~\citep{chen2024omnire} unifies background, foreground, and sky in a
-single Gaussian framework, establishing a strong all-in-one baseline.
-DrivingGaussian~\citep{wang2024drivinggaussian} further addresses large-scale
-urban environments by compositing incremental static and dynamic Gaussian fields
+that efficiently encode the slow, cyclic motions common in urban traffic,
+such as the repetitive movement of wipers or the oscillation of pedestrian gaits.
+OmniRe~\citep{chen2024omnire} unifies background, foreground, and sky in
+a single Gaussian framework, establishing a strong all-in-one baseline that
+subsumes the separate components of earlier compositional approaches.
+DrivingGaussian~\citep{wang2024drivinggaussian} addresses large-scale urban
+environments by compositing incremental static and dynamic Gaussian fields
 with a composite dynamic Gaussian graph for multi-camera consistency.
+NeuRAD~\citep{tonderski2024neurad} and SplatAD~\citep{hess2024splatad} further
+scale Gaussian-based driving simulation to production-grade multi-sensor (LiDAR
+plus camera) settings, demonstrating that the representation can accommodate
+the full sensor suite of a commercial autonomous vehicle.
 
 \paragraph{Generative world models for autonomous driving.}
-DriveDreamer~\citep{wang2023drivedreamer} is the first work to cast
-autonomous driving scene generation explicitly as a world model problem,
-training a diffusion model conditioned on structured traffic annotations and
-ego-motion to produce photorealistic, temporally coherent multi-camera video.
+The third strategy transcends deterministic scene reconstruction by training
+\emph{generative} models that can produce novel, physically plausible driving
+scenarios beyond the recorded dataset.
+This capability is essential for safety validation, which requires testing on
+corner cases that are rare or absent in recorded data.
+
+DriveDreamer~\citep{wang2023drivedreamer} is the pioneering work in this
+direction, explicitly framing autonomous driving scene generation as a world
+model problem by training a diffusion model conditioned on structured traffic
+annotations and ego-motion to produce photorealistic, temporally coherent
+multi-camera video.
 DriveDreamer-2~\citep{zhao2024drivedreamer2} scales this approach with
 LLM-generated traffic layouts, enabling greater diversity and user-controllable
-scenario editing without re-training.
-Drive-WM~\citep{wang2023drive_wm} proposes a multiview visual forecasting
-architecture that couples scene prediction with planning, demonstrating
-that a world model trained on real driving data can directly improve downstream
-planning metrics.
+scenario editing without re-training, by treating the LLM as a compositional
+scene language that the diffusion model can interpret.
+Drive-WM~\citep{wang2023drive_wm} couples scene prediction with planning,
+demonstrating that a world model trained on real driving data can directly
+improve downstream planning metrics---a result that validates the practical
+value of world model training for the end task of safe navigation.
 OccWorld~\citep{zheng2024occworld} takes a 3-D occupancy perspective,
 learning a world model that predicts future occupancy grids jointly with
 ego-motion, unifying scene forecasting and motion planning in a single
-autoregressive framework.
-WoVoGen~\citep{lu2023wovogen} introduces a world-volume-aware diffusion model
-that maintains spatial coherence across all cameras by reasoning over a
-shared 3-D world volume rather than independent per-camera feature maps.
+autoregressive framework that operates in explicit 3-D space rather than
+image space.
+WoVoGen~\citep{lu2023wovogen} addresses the multi-camera consistency challenge
+by reasoning over a shared 3-D world volume, ensuring that all generated
+camera views are geometrically coherent---a non-trivial constraint when
+cameras have limited overlap.
 
-\paragraph{Diffusion-based street generation.}
+Complementing these end-to-end world models, several methods address specific
+components of the simulation pipeline.
 StreetCrafter~\citep{yan2024streetcrafter} uses a point-cloud-conditioned video
-diffusion model with controllable camera motion, enabling photorealistic
-street-view synthesis for data augmentation.
+diffusion model with controllable camera motion for data augmentation in
+street-view synthesis, bridging the generation and reconstruction paradigms.
 Sat2Vid~\citep{wu2022sat2vid} lifts a satellite image to a street-view
-panoramic video, addressing the altitude gap between aerial mapping and
-ground-level perception.
+panoramic video, addressing the altitude gap between aerial mapping data
+and ground-level perception---a capability that could enable training data
+generation for any mapped region without physical vehicle traversal.
 Wild-GS~\citep{xu2024wildgs} solves the unconstrained internet-photo case by
-disentangling transient and persistent Gaussian appearance in 3DGS.
-InSpatio-WorldFM~\citep{chen2025inspatioworld} is an open-source real-time
-generative frame model targeting spatial world understanding at scale.
+disentangling transient and persistent Gaussian appearance in 3DGS,
+enabling reconstruction from tourist photos with varying weather and crowds.
+
+The driving simulation literature illustrates the full range of the NVS-to-WM
+transition: at one end, reconstructive methods (MARS, OmniRe) provide accurate
+but bounded-to-observed-data replays; at the other, generative world models
+(DriveDreamer, OccWorld) provide controllable synthesis of novel scenarios.
+The ideal system would combine the geometric accuracy of reconstruction with
+the diversity and controllability of generative models---an active open problem.
 
 \subsection{Generative World Models and Foundation Models}
 
 World foundation models represent the apex of the NVS-to-world-modeling
 trajectory: systems that jointly handle viewpoint, time, and action, trained
 at internet scale.
+These systems are distinguished from domain-specific simulators by their
+breadth: they are designed to generalise across diverse environments and task
+domains rather than to achieve maximum fidelity in a narrow setting.
 We identify three design axes that differentiate current approaches.
 
 \paragraph{Sequence vs.\ spatial representation.}
+The first design axis concerns whether the world state is represented
+as a flat sequence of tokens or as a spatially structured representation.
+Flat-sequence models are simpler to train at scale but sacrifice explicit
+geometric structure; spatial models are harder to train but support
+view-consistent generation by construction.
+
 GAIA-1~\citep{hu2023gaia} treats driving scenes as sequences of video, text,
 and action tokens, training an autoregressive transformer to predict the next
 token.
 This approach achieves strong temporal coherence but lacks an explicit 3-D
-representation, limiting viewpoint flexibility.
+representation, limiting viewpoint flexibility to the trained camera configurations.
 Genie~\citep{bruce2024genie} learns a latent action space from unsupervised
-internet videos, enabling interactive game-world generation without action labels---an
-important step toward self-supervised world model pretraining.
+internet videos, enabling interactive game-world generation without action
+labels---a significant step toward self-supervised world model pretraining
+that does not require expensive action annotation.
+The latent action discovery capability of Genie is particularly noteworthy
+because it demonstrates that world model training does not require labelled
+action data, which is scarce, but can exploit the vastly more abundant
+unlabelled video data.
 WorldDreamer~\citep{worlddreamer2024} adopts a masked-token prediction
 objective over a joint video-text tokenisation, demonstrating that masked
-world model pre-training transfers well to diverse downstream generation tasks.
+world model pre-training transfers well to diverse downstream generation
+tasks---analogously to how BERT-style pre-training transfers to NLP tasks.
 
 \paragraph{3-D-grounded generation.}
 Genie~2~\citep{parkerholder2024genie2} introduces persistent 3-D structure
 into the Genie framework, generating scenes that maintain geometry across
-viewpoints and support first-person interactive navigation---the closest
-current system to an NVS-grounded world model for open-ended environments.
+viewpoints and support first-person interactive navigation---currently the
+closest system to an NVS-grounded world model for open-ended environments.
+Its ability to generate geometrically consistent first-person view sequences
+in novel environments from a single image is a striking demonstration of
+the power of combining video diffusion with spatial grounding.
 WonderWorld~\citep{yu2024wonderworld} takes a complementary approach:
 instead of learning from large-scale video, it uses instant 3DGS initialisation
 from a single image combined with diffusion inpainting to generate interactive
-3-D scenes on the fly.
+3-D scenes on the fly, demonstrating that a lightweight system can produce
+interactive world experiences without any world model pretraining.
 WonderJourney~\citep{yu2023wonderjourney} chains text-guided scene generation
-steps to produce perpetual explorable 3-D environments.
-AVID~\citep{rigter2024avid} adapts pre-trained video diffusion models to
-serve as general-purpose world models for offline reinforcement learning,
-demonstrating that video generation and world modeling are more deeply
-connected than previously thought.
-Structured World Models~\citep{mendonca2023structured} learn
-structured representations from human videos in a fully unsupervised manner,
+steps to produce perpetually explorable 3-D environments, addressing the
+long-horizon generation challenge by breaking it into sequential local steps.
+Wonderland~\citep{liang2024wonderland} enables navigation through 3-D scenes
+from a single image by combining monocular depth estimation with video diffusion,
+demonstrating that the combination of geometric lifting and generative inpainting
+can produce compelling spatial experiences.
+AVID~\citep{rigter2024avid} adapts pre-trained video diffusion models to serve
+as general-purpose world models for offline reinforcement learning, demonstrating
+the deep connection between video generation and world modeling:
+a model trained for visual prediction can directly serve as an environment model
+for policy learning without task-specific world model training.
+Structured World Models~\citep{mendonca2023structured} learn structured
+representations from human videos in a fully unsupervised manner,
 enabling policy learning from video without any action labels.
 
 \paragraph{Physical-world foundation models.}
-Cosmos~\citep{agarwal2025cosmos} is the most ambitious current effort:
-a family of world foundation models pretrained on internet-scale video with
-explicit physical world conditioning, designed for downstream fine-tuning
-to robotics and autonomous driving.
+Cosmos~\citep{agarwal2025cosmos} is the most ambitious current effort: a family
+of world foundation models pretrained on internet-scale video with explicit
+physical world conditioning, designed for downstream fine-tuning to robotics
+and autonomous driving.
+Its training methodology---combining large-scale video pretraining with
+physics-informed conditioning---represents the field's most direct attempt
+to learn physical world dynamics from observation alone.
 Pandora~\citep{xiang2024pandora} interleaves language and video tokens,
-enabling language-driven world simulation with both visual and linguistic output.
-The \emph{Is Sora a World Simulator?} survey~\citep{zhu2024sora_survey}
-provides a comprehensive analysis of the relationship between video generation
+enabling language-driven world simulation with both visual and linguistic output;
+the joint language--video generation capability is essential for instruction-following
+world models that must respond to natural language commands.
+The \emph{Is Sora a World Simulator?} analysis~\citep{zhu2024sora_survey}
+provides a comprehensive assessment of the relationship between video generation
 models and world simulation capability, identifying key gaps in physical
-consistency, causal understanding, and controllability.
+consistency, causal understanding, and controllability that remain open
+in current video foundation models.
+This gap analysis is directly relevant to our survey because it quantifies how
+far the current best video generation systems fall short of a full world model.
 
 \paragraph{The NVS-to-WM transition.}
-A key architectural trend is the convergence of NVS and WM techniques:
-whereas early world models like GAIA-1 operated in 2-D video space,
-recent systems increasingly incorporate explicit 3-D representations---
-whether Gaussian splats, triplane NeRFs, or occupancy grids---as the
-``world state'' that the generative model predicts and renders.
-This convergence has both practical and theoretical significance:
-(i) 3-D-aware world models naturally support multi-camera and novel-viewpoint
-prediction, which is essential for robotic and driving applications;
-(ii) the NVS community's work on generalizable reconstruction provides the
-initialization and geometry backbone that world models need;
-and (iii) the world model community's work on temporal prediction and
-action conditioning provides the dynamics prior that pure NVS systems lack.
-The dual axis of \emph{spatial generalization} (D1--D2) and
-\emph{temporal/action conditioning} (D3--D5, see Table~\ref{tab:nvs_wm})
-captures this convergence precisely.
+A key architectural trend is the convergence of NVS and WM techniques.
+Whereas early world models like GAIA-1 operated in 2-D video space,
+recent systems increasingly incorporate explicit 3-D representations---whether
+Gaussian splats, triplane NeRFs, or occupancy grids---as the world state
+that the generative model predicts and renders.
+This convergence has both practical and theoretical significance.
+First, 3-D-aware world models naturally support multi-camera and novel-viewpoint
+prediction, which is essential for robotic and driving applications where the
+sensor configuration may change at test time.
+Second, the NVS community's work on generalisable reconstruction provides the
+initialisation and geometry backbone that world models need to maintain spatial
+consistency.
+Third, the world model community's work on temporal prediction and action
+conditioning provides the dynamics prior that pure NVS systems lack.
+Table~\ref{tab:nvs_wm} captures this convergence precisely via the dual axis of
+\emph{spatial generalisation}~(D1--D2) and \emph{temporal/action conditioning}~(D3--D5).
 
 Table~\ref{tab:worldmodels} compares world modeling methods.
 
@@ -205,60 +359,116 @@ Table~\ref{tab:worldmodels} compares world modeling methods.
 \subsection{Embodied AI and Robotics}
 
 NVS is more than a rendering tool in robotics: it provides the
-\emph{spatial prior} that allows agents to reason about unseen parts of the
-environment before taking action.
-Three use patterns have emerged.
+\emph{spatial prior} that allows agents to reason about unseen parts of
+the environment before taking action.
+This is precisely the world-model capability that matters for robotic
+manipulation and navigation---the ability to predict ``what would I see
+if I moved there?'' without physically executing the motion.
+We identify three use patterns that span the spectrum from pure pose
+estimation to full sim-to-real transfer.
 
 \textbf{Pose estimation and object localisation.}
 iNeRF~\citep{yen2021inerf} inverts a trained NeRF to estimate 6-DoF camera
 pose by gradient descent on the rendered photometric error---the first
 demonstration that NeRF's differentiable renderer can be repurposed for
-inference as well as reconstruction.
-Dex-NeRF~\citep{ichnowski2021dex} applies NeRF to transparent-object grasping,
-where conventional depth sensors fail, by leveraging NeRF's ability to
-model view-dependent appearance to infer geometry from specular reflections.
+\emph{inference} (estimating the state of the world) as well as reconstruction
+(building a model of it).
+This inversion paradigm anticipates the broader use of differentiable
+neural renderers for perception tasks.
+Dex-NeRF~\citep{ichnowski2021dex} applies NeRF to transparent-object
+grasping, where conventional depth sensors fail; by leveraging NeRF's
+ability to model view-dependent appearance, it infers geometry from
+specular reflections that are invisible to depth cameras.
 
 \textbf{Visual planning and manipulation.}
 NeRF-Supervisor~\citep{ze2023nerf_supervisor} uses a pre-trained NeRF to
 synthesise robot-wrist camera views at hypothetical future poses, enabling
-visual planning without physical rollouts.
-GaussianGrasping~\citep{shorinwa2024gaussiangrasping} replaces NeRF with 3DGS
-for real-time manipulation planning, exploiting the explicit Gaussian representation
-for fast collision checking and grasp pose optimisation.
+visual planning without physical rollouts---a direct application of NVS as
+a world model for robot manipulation.
+GaussianGrasping~\citep{shorinwa2024gaussiangrasping} replaces NeRF with
+3DGS for real-time manipulation planning, exploiting the explicit Gaussian
+representation for fast collision checking and grasp pose optimisation;
+the real-time rendering speed of 3DGS is essential for reactive planning
+in dynamic environments.
 
 \textbf{Simulation-to-real transfer.}
 RoboGSim~\citep{li2024robogssim} reconstructs robot workspaces in 3DGS and
 renders synthetic training demonstrations from novel viewpoints, directly
 closing the sim-to-real gap for visuomotor policy learning.
+By generating photorealistic training data at arbitrary viewpoints and
+configurations---including viewpoints that were never physically observed---it
+demonstrates that a 3DGS world model can serve as a data augmentation engine
+for downstream policy learning.
+
+The robotic applications of NVS reveal the concrete value proposition of
+geometric world models: they enable agents to reason about unseen viewpoints
+and states without physical exploration, reducing the cost and risk of
+real-world data collection.
+This is the most direct current application of world modeling to embodied AI,
+and it points toward a future in which robots continuously update and query
+their spatial world models as part of closed-loop task execution.
 
 \subsection{Human Novel View Synthesis}
 
 Synthesising novel views of humans is a critical subproblem with applications
 in AR/VR, telepresence, and embodied AI.
+The challenge is distinct from general scene NVS because human bodies have
+a known structural prior (the kinematic skeleton and body shape parameterised
+by SMPL) that can serve as a geometric scaffold, but also exhibit complex
+non-rigid deformation (clothing, hair, facial expression) that the scaffold
+alone cannot represent.
 
 \paragraph{Neural implicit human models.}
-Neural Body~\citep{peng2021neuralbody} anchors structured latent codes on a
-parametric human body (SMPL), enabling novel view and pose synthesis.
+Neural Body~\citep{peng2021neuralbody} was the first work to combine the
+SMPL structural prior with NeRF, anchoring structured latent codes on
+SMPL vertices to enable novel view and pose synthesis with strong
+body geometry constraints.
 Rotationally-Temporally Consistent~\citep{liu2021rtcnvs} enforces both
-rotation and temporal consistency for human performance video synthesis.
+rotation and temporal consistency for human performance video synthesis,
+addressing the specific failure mode of per-frame NeRF methods that produce
+flickering or geometrically inconsistent results across frames.
 NHR~\citep{wu2020nhr} adopts multi-view point-cloud-based rendering for
-dynamic human synthesis.
+dynamic human synthesis, demonstrating that explicit point representations
+can support high-quality human rendering before the 3DGS era.
 
-\paragraph{Generalizable and diffusion-based human NVS.}
-CFSynthesis~\citep{li2023cfsynth} enables controllable and free-view 3-D human
-video synthesis via a disentangled representation.
+\paragraph{Generalisable and diffusion-based human NVS.}
+CFSynthesis~\citep{li2023cfsynth} enables controllable and free-view 3-D
+human video synthesis via a disentangled representation that separates body
+pose, shape, and appearance, enabling independent control of each.
 iVS-Net~\citep{chen2024ivsnet} learns human view synthesis from internet
-videos without any 3-D supervision.
-Blur2Sharp~\citep{dong2024blur2sharp} addresses human novel pose and view
-synthesis from blurry input with a generative prior.
+videos without any 3-D supervision, demonstrating that the abundance of
+2-D human video on the internet is sufficient to learn a strong human NVS
+prior without expensive multi-view capture studios.
 Diffuman4D~\citep{zheng2024diffuman4d} achieves 4-D consistent human view
-synthesis from sparse-view videos via video diffusion.
+synthesis from sparse-view videos via video diffusion, extending the
+video-diffusion-as-4D-prior paradigm to the human domain.
 EVA-Gaussian~\citep{hu2024evacg} achieves real-time 3DGS-based human NVS
-under diverse multi-view settings.
+under diverse multi-view settings, combining the real-time rendering speed
+of 3DGS with a feed-forward generalisation architecture for fast inference
+on unseen subjects.
+Blur2Sharp~\citep{dong2024blur2sharp} addresses human novel pose and view
+synthesis from blurry input with a generative prior, targeting the practical
+setting where captured reference images have motion blur.
+
+Human NVS methods represent an important special case of the general world
+modeling problem: the human body is a system with known structure, highly
+constrained dynamics (governed by skeletal kinematics), and rich
+appearance variation (clothing, lighting, expression).
+The success of structured human models suggests a general design principle
+for world modeling: incorporating domain-specific structural priors
+substantially reduces the burden on the learned generative component.
 
 \subsection{The Boundary: NVS vs.\ World Modeling}
 
-Table~\ref{tab:nvs_wm} delineates the capability boundary.
+Table~\ref{tab:nvs_wm} delineates the capability boundary between NVS and
+full World Modeling, using the five desiderata (D1--D5) introduced in
+\S\ref{sec:background}.
+The table reveals that contemporary \nvs{} systems have substantially closed
+gaps D1 and D2---geometric consistency and sparse-input generalisation---but
+that D3 (temporal dynamics), D4 (action conditioning), and D5 (physical
+plausibility) remain only partially addressed even by the most advanced
+world foundation models.
+This analysis defines the open research frontier we discuss in \S\ref{sec:open}.
 
 \begin{table}[t]
   \centering

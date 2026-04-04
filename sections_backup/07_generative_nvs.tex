@@ -13,64 +13,35 @@ Generative methods are therefore the primary vehicle for the one-image-to-3D,
 text-to-3D, and single-image world-generation capabilities that bring \nvs{}
 into the world-modeling regime.
 
-We organise the generative \nvs{} landscape into four paradigms, ordered
-chronologically and by increasing capability.
-First, 3-D-aware GANs (\S\ref{sec:3dgan}) embed radiance fields inside GAN
-generators, enabling implicit 3-D supervision from unposed 2-D image collections.
-Second, pose-conditioned and camera-trajectory diffusion models (\S\ref{sec:diffusion_nvs})
-use the pre-trained image and video priors of large-scale diffusion models
-for single-image and multi-view NVS with explicit camera conditioning.
-Third, Score Distillation Sampling (\S\ref{sec:sds}) repurposes 2-D diffusion
-models as differentiable score functions for optimising explicit 3-D representations.
-Fourth, dedicated multi-view diffusion architectures (\S\ref{sec:mvd}) design
-models from scratch for 3-D-consistent generation at scale.
-Table~\ref{tab:generative_methods} at the end of this section provides a
-structured comparison across all four paradigms.
-
 \subsection{3-D-Aware GANs: Learning Geometry from 2-D Supervision}
-\label{sec:3dgan}
 
 The first wave of generative \nvs{} methods embedded radiance fields inside
 GAN generators, enabling implicit 3-D supervision from unposed 2-D image
 collections---a paradigm that proved influential precisely because it
 required no 3-D ground truth.
-The central insight is that if the generator is constrained to produce images
-by rendering a 3-D representation, the adversarial training signal is sufficient
-to recover approximate 3-D geometry from 2-D supervision alone.
 
 GRAF~\citep{schwarz2020graf} pioneered this direction by conditioning a NeRF
 generator on a latent shape-appearance code, training with a 2-D discriminator.
-While GRAF established the GAN-NeRF framework, it was limited to low resolution
-and trained slowly due to the computational cost of volumetric rendering.
 pi-GAN~\citep{chan2021pigan} improved the NeRF backbone with periodic activations
 (SIREN~\citep{sitzmann2020siren}), achieving substantially better multi-view
-consistency and demonstrating that the choice of activation function
-significantly impacts the sharpness and coherence of the generated geometry.
+consistency.
 GIRAFFE~\citep{niemeyer2021giraffe} introduced scene compositionality by
 combining foreground and background neural feature fields, enabling object-level
-editing without explicit segmentation---a valuable capability for world modeling
-that requires reasoning about independently acting scene entities.
-
-EG3D~\citep{chan2022efficient} is the landmark method of this era.
-Its \emph{triplane} representation---three axis-aligned 2-D feature maps
-decoded by a shallow MLP---reduces rendering cost by orders of magnitude
-compared to volumetric NeRF, and admits a super-resolution upsampler that
-enables 512$\times$512 training at practical throughput.
-The triplane design directly inspired the LRM family (\S\ref{sec:lrm}) and
-remains a dominant architectural building block.
+editing without explicit segmentation.
+EG3D~\citep{chan2022efficient} is the landmark method of this era: its
+\emph{triplane} representation---three axis-aligned 2-D feature maps decoded by
+a shallow MLP---reduces rendering cost by orders of magnitude and admits a
+super-resolution upsampler, enabling 512$\times$512 training at practical
+throughput.
 StyleNeRF~\citep{gu2022stylenerf} integrates the NeRF volume renderer into a
 StyleGAN~\citep{karras2019stylegan2} backbone, inheriting its powerful
-style-based latent structure for fine-grained appearance control, demonstrating
-that the StyleGAN latent space and NeRF geometry are complementary rather than
-competing design choices.
+style-based latent structure for fine-grained appearance control.
 
 A critical limitation of GAN-based approaches is \emph{mode coverage}: the
 discriminator objective encourages sharp, realistic individual samples but does
 not explicitly minimise distributional divergence over all plausible views,
 making it prone to mode dropping for complex, asymmetric scenes.
-Training instability is a further persistent challenge.
-These limitations motivated the transition toward diffusion-based approaches,
-which we discuss next.
+This motivated the transition toward diffusion-based approaches.
 
 \subsection{Diffusion Models for Camera-Controlled NVS}
 \label{sec:diffusion_nvs}
@@ -81,10 +52,6 @@ dominant generative paradigm for \nvs{} due to three decisive advantages:
 (ii)~access to powerful image priors from large-scale pretraining;
 (iii)~natural integration of arbitrary conditioning signals (pose, depth,
 text, reference image) through classifier-free guidance.
-In contrast to GAN training, which requires careful architectural and
-hyperparameter tuning to avoid mode collapse, diffusion models can be
-fine-tuned from large pretrained checkpoints---a substantially lower barrier
-that has enabled rapid proliferation of camera-conditioned \nvs{} methods.
 
 \subsubsection{Pose-Conditioned Single-Image NVS}
 
@@ -93,8 +60,7 @@ photograph and a target camera pose $\boldsymbol{\pi}^*$, generate a plausible
 rendering at that viewpoint.
 This is under-constrained without a prior---an infinite number of 3-D scenes
 are consistent with a single 2-D observation---and diffusion models provide
-exactly the distributional prior needed to resolve this ambiguity in a
-perceptually coherent manner.
+exactly the distributional prior needed.
 
 \paragraph{Zero-1-to-3 and successors.}
 Zero-1-to-3~\citep{liu2023zero1to3} established the canonical formulation:
@@ -104,10 +70,6 @@ on both the reference image and the relative pose $(\Delta\phi, \Delta\theta,
 \Delta r)$ encoded as a CLIP-space vector.
 The model learns to ``imagine'' how an object would look from any viewpoint,
 without constructing an explicit 3-D representation.
-The elegance of this formulation lies in its simplicity: by framing NVS
-as a conditional generation task, it side-steps the need for explicit
-3-D supervision while leveraging the strong visual prior of the large
-diffusion backbone.
 Zero123++~\citep{shi2023zero123pp} strengthens multi-view consistency by
 predicting a fixed grid of six canonical views simultaneously, reducing
 inter-view inconsistency from independent sampling.
@@ -122,9 +84,6 @@ producing inter-view geometric contradictions.
 SyncDreamer~\citep{liu2023syncdreamer} addresses this by coupling the denoising
 of multiple target views through shared 3-D volume attention at each diffusion
 step, enforcing consistent geometry throughout the synthesis process.
-The 3-D attention mechanism is the architectural mechanism that links
-the otherwise independent denoising chains, and its introduction marks
-an important step toward natively 3-D-aware diffusion.
 MVDiffusion~\citep{tang2023mvdiffusion} constructs a correspondence-aware attention
 mechanism that explicitly queries matching pixels across views, enabling
 holistic panorama generation from a set of overlapping perspective images.
@@ -132,22 +91,15 @@ Wonder3D~\citep{long2024wonder3d} takes a two-domain approach: a cross-domain
 diffusion model simultaneously denoises an RGB and a surface-normal image,
 with the normal output serving as high-quality geometric supervision for
 downstream mesh reconstruction.
-The joint RGB--normal prediction is a principled way to leverage the diffusion
-model for geometry estimation, exploiting the tight coupling between appearance
-and geometry that a strong generative prior can encode.
 
 \paragraph{Scalable and pose-free generation.}
 EscherNet~\citep{kong2024eschernet} generalises pose conditioning via a
 novel \emph{camera positional encoding}~(CaPE), enabling generation of
 an arbitrary number of views at any resolution without per-angle fine-tuning.
-This is a significant practical advance: earlier methods required separate
-models or fine-tuning for each target view configuration.
 ViVid-1-to-3~\citep{kwak2024vivid} recasts NVS as a video generation problem:
 the temporal axis of a pre-trained video diffusion model is repurposed to model
 the viewpoint axis, using the model's temporal consistency as a proxy for
 multi-view coherence.
-This repurposing leverages the massive scale of video diffusion pretraining
-for the NVS task, at no additional annotation cost.
 GeoNVS~\citep{chen2024geonvs} addresses geometric fidelity by conditioning a
 video diffusion model on a rendered point cloud at the target pose, grounding
 the generative hallucination in explicit 3-D geometry.
@@ -159,45 +111,32 @@ coupling.
 A more ambitious goal is to train a diffusion model that \emph{natively}
 produces multi-view consistent outputs---effectively encoding 3-D structure
 implicitly in the model weights.
-This requires the model to simultaneously denoise all target views while
-ensuring that the noise-free outputs are consistent renderings of a single
-3-D scene.
 
 MVDream~\citep{shi2023mvdream} achieves this by replacing the temporal
 self-attention in a video diffusion transformer with a 3-D-aware \emph{multi-view
 attention} block that attends across all views simultaneously.
 Training on rendered 3-D assets (Objaverse) with known camera poses teaches the
-model to share structural information across views, with the multi-view attention
-serving as the information-sharing mechanism.
+model to share structural information across views.
 The resulting model can be used both as a standalone multi-view generator and
-as a geometry-consistent score function for SDS-based text-to-3D, demonstrating
-its versatility across both generation paradigms.
+as a geometry-consistent score function for SDS-based text-to-3D.
 
 GeNVS~\citep{chan2023genvs} takes a hybrid approach: a NeRF encoder constructs
 a 3-D feature volume from the conditioning images, and the diffusion decoder
 renders a target view by volumetrically querying this feature space.
 This architecture provides hard geometric grounding while preserving the
 expressiveness of the diffusion prior for high-frequency appearance details.
-It represents a principled fusion of reconstruction-based geometry encoding and
-generation-based appearance synthesis.
 
 \subsubsection{Camera Trajectory Conditioning and Video Diffusion NVS}
 
 A particularly important frontier is conditioning diffusion models on
 \emph{continuous camera trajectories}, enabling the generation of smooth,
 temporally coherent novel-view sequences---the direct bridge to world modeling.
-A camera trajectory is, in this view, a special case of an action sequence:
-it specifies how the observer moves through the world over time, and synthesising
-the corresponding visual experience is the minimal test of a world model's
-spatial understanding.
 
 \paragraph{Camera trajectory as a control signal.}
 ViewCrafter~\citep{yu2024viewcrafter} conditions a video diffusion model
 (CogVideoX) on point-cloud renderings along a target camera path, using
 the rendered point cloud as a structural scaffold that prevents temporal
 drift while the diffusion model fills in appearance and fine geometry.
-The point-cloud scaffold is a simple but effective way to provide geometric
-grounding to an otherwise unconstrained video generation model.
 Free3D~\citep{zheng2023free3d} injects camera pose into each frame's
 cross-attention query, enabling a single video diffusion model to follow
 arbitrary camera trajectories from a single reference image.
@@ -216,10 +155,6 @@ DDIM Inversion for NVS~\citep{xu2024ddim_nvs} exploits the deterministic
 reconstruction property of DDIM~\citep{song2020ddim}: inverting the reference
 image to its latent code and re-decoding with a modified pose conditioning
 produces structurally faithful novel views, again without additional training.
-These training-free approaches reveal an important finding: the geometric
-knowledge needed for NVS is already latent in large-scale video diffusion models,
-and the primary task is to elicit it with appropriate conditioning mechanisms
-rather than to learn it from scratch.
 
 \paragraph{Geometric conditioning for high fidelity.}
 Projected Representation Conditioning~\citep{han2024prc} proposes projecting
@@ -237,18 +172,13 @@ geometric cues.
 A complementary design philosophy \emph{separates} the diffusion and reconstruction
 stages: diffusion fills in missing views and hallucinations, while a deterministic
 reconstruction pipeline (NeRF or 3DGS) enforces 3-D consistency.
-This modular design is attractive because it allows each component to be trained
-and improved independently, and it provides a clean separation of concerns
-between generative (appearance hallucination) and geometric (multi-view consistency)
-reasoning.
 
 Cat3D~\citep{gao2024cat3d} exemplifies this pattern: given sparse reference
 views ($n\geq1$), a multi-view diffusion model generates a dense set of
 synthetic pseudo-views, which are then fed to a standard 3DGS reconstruction
 pipeline.
 Because the diffusion model is fine-tuned jointly with the reconstruction loss,
-the generated views are explicitly optimised for downstream reconstruction fidelity,
-not just perceptual quality.
+the generated views are explicitly optimised for downstream reconstruction fidelity.
 ReconFusion~\citep{wu2024reconfusion} integrates the diffusion prior more tightly:
 it conditions a pixel-diffusion model on pixelNeRF~\citep{yu2021pixelnerf}
 feature queries, acting as a learned regulariser that fills in uncertain regions
@@ -263,16 +193,11 @@ information from all reference images before passing to the diffusion model,
 improving quality without requiring explicit pose estimation.
 
 \subsection{Score Distillation: Diffusion as a 3-D Optimisation Oracle}
-\label{sec:sds}
 
 Score Distillation Sampling (SDS)~\citep{poole2023dreamfusion} opened a
 separate pathway: instead of directly generating novel views, use a
 pre-trained 2-D diffusion model as a differentiable \emph{score function}
 to optimise a 3-D representation.
-The key observation is that the score function of a diffusion model approximates
-the gradient of the log density of the training data distribution, which provides
-a signal that pushes rendered images toward the distribution of natural images
-matching a given text description.
 The core identity is:
 \begin{equation}
   \nabla_\theta \mathcal{L}_\text{SDS}
@@ -289,26 +214,15 @@ image, $y$ is a text prompt, and $\hat{\boldsymbol{\epsilon}}_\phi$ is the
 diffusion model's noise prediction.
 
 DreamFusion~\citep{poole2023dreamfusion} first demonstrated that SDS can
-synthesise coherent 3-D objects from text descriptions, establishing the
-proof-of-concept that a 2-D diffusion prior is sufficient to supervise 3-D
-geometry without any 3-D data.
-The subsequent SDS literature has largely focused on addressing the two main
-failure modes of vanilla SDS: \emph{over-saturation} (the generated objects
-appear too bright and vivid), and \emph{multi-face Janus artifacts} (the model
-generates separate correct-looking faces on each side of the object rather
-than a consistent 3-D structure).
-
+synthesise coherent 3-D objects from text descriptions.
 Magic3D~\citep{lin2023magic3d} introduces a coarse-to-fine strategy that
 first optimises a coarse NeRF then refines a differentiable mesh, achieving
-$8\times$ higher resolution than DreamFusion by splitting the optimisation
-into two stages with different representations.
-ProlificDreamer~\citep{wang2023prolificdreamer} provides the sharpest theoretical
-analysis of the over-saturation artifact, identifying it as a consequence
-of mode-seeking behaviour in the SDS gradient.
-It proposes \emph{Variational Score Distillation} (VSD), which models the
-3-D parameter distribution as a particle set and applies Stein variational
-gradient descent to obtain diverse, high-quality generation that avoids
-the mode-seeking bias.
+$8\times$ higher resolution.
+ProlificDreamer~\citep{wang2023prolificdreamer} identifies the ``over-saturation''
+artifact of SDS as a consequence of mode-seeking behaviour, proposing
+\emph{Variational Score Distillation} (VSD) which models the 3-D parameter
+distribution as a particle set and applies Stein variational gradient descent
+for diverse, high-quality generation.
 Fantasia3D~\citep{chen2023fantasia3d} disentangles geometry (optimised via
 SDS on a DMTet mesh) from appearance (a physically-based BRDF), enabling
 photorealistic materials and independent editing of shape and texture.
@@ -318,26 +232,11 @@ real-time rendering of the final asset.
 LucidDreamer~\citep{chung2023luciddreamer} addresses SDS instability with an
 interval-based score matching scheme that reduces gradient variance.
 
-The SDS paradigm is notable for its complete decoupling of the 3-D representation
-from the generation model: any differentiable 3-D representation can in principle
-serve as the target, and any sufficiently capable 2-D diffusion model can provide
-the score function.
-This modularity has made SDS a productive research direction, with both the
-representation and the score function components improving in parallel.
-The remaining challenge is quality: SDS-based text-to-3D typically produces
-objects with lower texture quality and fewer fine details than the best
-feed-forward reconstruction methods, because the SDS gradient is an
-expectation over all plausible views rather than a direct reconstruction loss.
-
 \subsection{Dedicated Multi-View Diffusion Architectures}
-\label{sec:mvd}
 
-The methods above predominantly adapt existing video or image diffusion models
-to the NVS task.
+The methods above predominantly adapt existing video or image diffusion models.
 A complementary line of work designs architectures \emph{from scratch} for
-multi-view consistency, taking the view that the temporal attention mechanism
-of video diffusion models is a suboptimal proxy for the geometric consistency
-requirements of multi-view generation.
+multi-view consistency.
 
 MVDream~\citep{shi2023mvdream} replaces temporal attention with multi-view
 attention and trains on Objaverse with ground-truth camera poses, producing
@@ -345,11 +244,10 @@ natively 3-D-consistent outputs.
 ImageDream~\citep{wang2024imagedream} extends MVDream to image-conditioned
 generation, enabling single-image-to-3D with strong semantic fidelity.
 Zero123-XL~\citep{zero123xl2023} scales the Zero-1-to-3 paradigm to larger
-model capacities and more diverse training data, demonstrating consistent
-quality improvements with scale.
+model capacities and more diverse training data.
 Direct3D~\citep{wu2024direct3d} trains a native 3-D latent diffusion model
 on a triplane latent space, enabling direct 3-D generation without a two-stage
-pipeline by operating entirely in 3-D feature space.
+pipeline.
 
 \paragraph{High-resolution and dense multi-view generation.}
 ERA3D~\citep{li2024era3d} addresses the resolution bottleneck of earlier
@@ -370,9 +268,6 @@ Hunyuan3D~\citep{yang2024hunyuan3d} and its successor
 Hunyuan3D~2.0~\citep{zhao2025hunyuan3dv2} combine a multi-view diffusion model
 with a high-fidelity texture synthesis pipeline, scaling text-to-3D and
 image-to-3D generation to production-quality textured meshes.
-Their two-stage design---multi-view generation followed by texture baking---provides
-a clean pipeline architecture that is being widely adopted by downstream
-production systems.
 Bootstrap3D~\citep{sun2024bootstrap3d} addresses the data scarcity problem by
 synthesising a large-scale multi-view image dataset with a self-training
 loop, substantially improving the diversity and quality of multi-view

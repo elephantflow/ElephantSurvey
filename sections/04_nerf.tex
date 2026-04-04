@@ -1,58 +1,131 @@
 \section{NeRF: Implicit Neural Radiance Fields}
 \label{sec:nerf}
 
+Neural Radiance Fields occupy the foundational stratum of modern \nvs{}.
+Their introduction by \citet{mildenhall2020nerf} demonstrated, for the first
+time, that a compact neural parameterisation could represent complex real scenes
+with view-dependent appearance at a quality that classical geometry-and-texture
+pipelines could not approach.
+The subsequent literature has pursued two independent but equally important
+directions: \emph{accelerating} per-scene NeRF optimisation to make it
+practical, and \emph{generalising} it beyond per-scene fitting to enable fast
+inference across diverse, previously unseen scenes.
+A third, deeply important direction addresses \emph{dynamic and deformable scenes},
+which is a necessary prerequisite for world modeling.
+We survey all three sub-families below, with Table~\ref{tab:nerf_methods}
+providing a comprehensive cross-family comparison.
+
 \subsection{Foundational NeRF Methods}
 
 The original NeRF~\citep{mildenhall2020nerf} demonstrated that an MLP with
 positional encoding could faithfully represent complex real scenes with
 view-dependent appearance from a few dozen posed photographs.
 Subsequent work systematically addressed its two principal limitations---slow
-optimisation and poor generalisation to novel scenes.
+optimisation and poor generalisation---laying the groundwork for the modern
+NeRF ecosystem.
+Before examining these extensions, however, we first discuss improvements to
+the core per-scene optimisation pipeline, as they established the quality and
+speed baselines against which all later methods are measured.
 
 \paragraph{Accelerating per-scene optimisation.}
-The bottleneck in vanilla NeRF is the MLP query: every rendered pixel
-requires hundreds of network evaluations along the ray.
-Instant-NGP~\citep{muller2022instant} replaces the large MLP backbone with a
-compact multi-resolution \emph{hash grid}, enabling training convergence in
-under a minute on a single GPU while matching or exceeding prior quality.
-TensoRF~\citep{chen2022tensorf} decomposes the radiance field into low-rank
-CP and VM tensor components, reducing both storage and rendering overhead.
-Plenoxels~\citep{fridovich2022plenoxels} eliminates the MLP entirely,
-using a sparse 3-D voxel grid with trilinearly interpolated spherical harmonics;
-the resulting model trains in minutes without gradient-intensive network
-backward passes.
+The central bottleneck in vanilla NeRF is the MLP query: every rendered pixel
+requires hundreds of network evaluations along a sampled ray, making training
+convergence require hours even on high-end GPUs.
+The insight that motivated the first generation of accelerated methods was that
+the large MLP is architecturally overspecified for a fixed scene---much of its
+capacity is consumed by storing spatial correlations that could be encoded
+far more efficiently in an explicit spatial data structure.
+
+Instant-NGP~\citep{muller2022instant} realised this insight most completely,
+replacing the large MLP backbone with a compact multi-resolution
+\emph{hash grid} that stores feature vectors at a trainable table of spatial
+positions.
+The hash encoding is both compact and highly parallelisable on GPU, enabling
+training convergence in under a minute on a single GPU while matching or
+exceeding prior quality.
+TensoRF~\citep{chen2022tensorf} took a complementary algebraic approach,
+decomposing the radiance field tensor into low-rank CP and VM components;
+this tensor factorisation reduces both storage and memory bandwidth without
+sacrificing the continuous differentiability of the implicit representation.
+Plenoxels~\citep{fridovich2022plenoxels} eliminates the MLP entirely, using
+a sparse 3-D voxel grid with trilinearly interpolated spherical harmonics;
+the key observation is that view-dependent colour can be represented
+without a neural network, and the resulting model trains in minutes by
+avoiding costly backward passes through deep networks.
 DirectVoxGO~\citep{sun2022dvgo} accelerates convergence via a two-stage
-coarse-to-fine voxel grid that aggressively skips empty space.
+coarse-to-fine voxel grid that aggressively skips empty space during sampling,
+directly reducing the number of expensive MLP queries to only those near
+visible surfaces.
 
 \paragraph{Improving visual quality and handling challenging scenes.}
-Mip-NeRF~\citep{barron2021mipnerf} replaces the point-sampled ray with an
+Even as the acceleration methods were resolving the speed bottleneck,
+a parallel strand of work addressed systematic quality failures in vanilla
+NeRF: aliasing at different viewing distances, failure on unbounded scenes,
+and poor handling of specular and metallic materials.
+
+Mip-NeRF~\citep{barron2021mipnerf} identified aliasing as arising from the
+point-sampling abstraction of the ray: when a pixel footprint covers a large
+solid angle---as at large distances or with wide-angle lenses---querying the
+radiance field at a single point is a poor approximation of the integral
+over the pixel.
+Mip-NeRF replaces the point-sampled ray with an
 \emph{integrated positional encoding} over a conical frustum, substantially
-reducing aliasing at multiple viewing distances.
-Mip-NeRF~360~\citep{barron2022mipnerf360} extends this to unbounded outdoor
-scenes via a non-linear scene parameterisation that contracts the infinite
-background into a bounded representation.
-Zip-NeRF~\citep{barron2023zipnerf} unifies the hash grid of Instant-NGP with
-the anti-aliasing of Mip-NeRF~360, establishing the current quality frontier
-for per-scene NeRF.
-NeRF-W~\citep{martinbrualla2021nerfw} introduces per-image latent appearance
-codes and a transient object model, enabling reconstruction of tourist-photographed
-landmarks from uncontrolled internet images.
-Ref-NeRF~\citep{verbin2022refnerf} restructures the directional encoding into
-a physically-based reflection model that explicitly predicts diffuse colour,
-specular tint, and surface roughness, dramatically improving the rendering of
-specular and metallic materials.
+reducing aliasing across multiple viewing distances and establishing the first
+rigorous anti-aliasing framework for neural radiance fields.
+Mip-NeRF~360~\citep{barron2022mipnerf360} extended this framework to
+\emph{unbounded} outdoor scenes, which vanilla NeRF and even Mip-NeRF handle
+poorly because the scene volume is infinite.
+It resolves this via a non-linear scene parameterisation that contracts the
+infinite background into a bounded representation, allowing the model to
+allocate capacity appropriately between the foreground and the distant environment.
+Zip-NeRF~\citep{barron2023zipnerf} later unified the hash grid of Instant-NGP
+with the anti-aliasing of Mip-NeRF~360, establishing the current quality
+frontier for per-scene NeRF by combining the speed of explicit encoding with
+the rigour of multi-scale anti-aliasing.
+
+NeRF-W~\citep{martinbrualla2021nerfw} addressed a different quality challenge:
+reconstructing landmarks from uncontrolled internet images, where illumination
+varies across photographs and transient objects (tourists, cars) are present in
+some images but not others.
+It introduces per-image latent appearance codes to absorb illumination variation,
+together with a transient object model that down-weights inconsistent observations
+during training.
+Ref-NeRF~\citep{verbin2022refnerf} tackled the failure of directional encoding
+to represent specular materials accurately, restructuring the directional
+encoding into a physically-based reflection model that explicitly predicts
+diffuse colour, specular tint, and surface roughness.
+The key contribution is a \emph{reflectance decomposition} that separates the
+predicted colour into diffuse and specular components, each with its own
+directional dependence, dramatically improving the rendering of specular and
+metallic surfaces.
 
 \paragraph{Surface reconstruction.}
 While volume rendering naturally produces accurate alpha composites, it does not
-enforce a well-defined surface, leading to noisy geometry.
-NeuS~\citep{wang2021neus} reformulates volume rendering using a logistic
-density derived from a Signed Distance Function~(SDF), yielding watertight,
-high-quality surface reconstruction.
-VolSDF~\citep{yariv2021volsdf} derives a rigorous analytical mapping from
-SDF values to volume density, providing a theoretically grounded alternative.
-BakedSDF~\citep{yariv2023bakedsdf} combines the surface quality of SDF-based
-NeRF with real-time rendering by extracting and baking the learned SDF into a
-high-quality mesh.
+enforce a well-defined surface: the density function can be ``foggy'' near
+object boundaries, leading to noisy geometry.
+This matters greatly for applications beyond view synthesis---mesh extraction
+for rendering in game engines, collision geometry for robotics, or structural
+analysis in architecture---and motivated a dedicated line of work on
+SDF-based neural surface reconstruction.
+
+NeuS~\citep{wang2021neus} made the pivotal observation that volume rendering
+and SDF reconstruction can be unified: by reformulating the volume rendering
+integral using a logistic density derived from a Signed Distance Function,
+it obtains watertight, high-quality surface reconstruction without any
+explicit surface supervision.
+VolSDF~\citep{yariv2021volsdf} independently derived a rigorous analytical
+mapping from SDF values to volume density, providing a theoretically grounded
+alternative and demonstrating that the logistic function used by NeuS is one
+member of a broader family of valid density functions.
+BakedSDF~\citep{yariv2023bakedsdf} takes the SDF-based surface quality one
+step further by combining high-quality SDF reconstruction with real-time
+rendering: after optimisation, the learned SDF is extracted into a mesh and
+the view-dependent appearance is ``baked'' into a texture, enabling real-time
+playback of neurally reconstructed scenes.
+
+Together, these three sub-families---acceleration, quality, and
+surface---resolved the core technical limitations of vanilla NeRF and set the
+stage for the generalisation and dynamics work discussed next.
 
 Table~\ref{tab:nerf_methods} provides a comprehensive comparison of NeRF variants
 across all three sub-families: per-scene optimisation, generalizable,
@@ -120,71 +193,160 @@ and dynamic methods.
 
 \subsection{Generalizable NeRF}
 
-Per-scene NeRF requires lengthy per-scene optimisation, limiting scalability.
-\emph{Generalisable} methods learn a shared prior across scenes, enabling
-fast inference on new scenes.
+Per-scene NeRF achieves high quality but at the cost of lengthy per-scene
+optimisation, which is fundamentally incompatible with applications requiring
+rapid scene understanding---robotic manipulation, autonomous navigation, and
+real-time AR all require scene understanding on the order of seconds, not hours.
+\emph{Generalisable} methods address this bottleneck by learning a shared
+prior across many training scenes, enabling fast inference on previously
+unseen scenes without any per-scene optimisation.
+The key design challenge is determining how to encode the reference views
+into a scene representation that the NeRF decoder can query efficiently.
 
-pixelNeRF~\citep{yu2021pixelnerf} conditions the NeRF MLP on pixel-aligned
-CNN features extracted from reference views, enabling single-image reconstruction.
-IBRNet~\citep{wang2021ibrnet} uses a transformer to aggregate features from
-multiple reference views at query points along the ray.
-MVSNeRF~\citep{chen2021mvsnerf} builds a cost volume from stereo for
-geometry-aware feature extraction.
-GNT~\citep{wang2022gnt} dispenses with the NeRF MLP entirely, replacing it
-with a two-stage transformer that first encodes reference views into a
-view-independent representation and then renders the target view via
-cross-attention, learning geometric reasoning as an emergent property of
-attention rather than an explicit inductive bias.
-SRT~\citep{sajjadi2022srt} pursues a similar philosophy but uses a
+pixelNeRF~\citep{yu2021pixelnerf} established the foundational paradigm:
+it conditions the NeRF MLP on pixel-aligned CNN features extracted from
+reference views, so that at any query point along a ray, the model can
+attend to the corresponding image-space features.
+This pixel-aligned conditioning enables single-image reconstruction but
+inherits the NeRF MLP's slow rendering speed.
+IBRNet~\citep{wang2021ibrnet} improved upon this by using a transformer to
+aggregate features from multiple reference views at query points along the ray,
+learning to weight each reference view by its relevance to the current
+query location and thus producing smoother, more consistent geometry.
+MVSNeRF~\citep{chen2021mvsnerf} introduced explicit geometric reasoning
+by building a cost volume from stereo correspondences, providing a
+geometry-aware feature representation that substantially improves reconstruction
+under large view baselines.
+
+A particularly important direction is the elimination of the NeRF MLP
+altogether.
+GNT~\citep{wang2022gnt} dispenses with the volumetric rendering MLP,
+replacing it with a two-stage transformer: the first stage encodes reference
+views into a view-independent scene representation, and the second renders
+the target view via cross-attention.
+This architecture learns geometric reasoning as an emergent property of
+attention rather than an explicit inductive bias, achieving better
+generalisation on scenes that violate the assumptions of cost-volume methods.
+SRT~\citep{sajjadi2022srt} pursues a similar philosophy with a
 set-latent architecture, encoding an arbitrary number of views into a
-fixed-size scene representation without pose assumptions.
-NerfDiff~\citep{gu2023nerfdiff} augments generalizable NeRF with diffusion
-priors for single-image synthesis.
-ZeroRF~\citep{shi2023zerorf} achieves sparse-view 360$^\circ$ reconstruction
-via per-scene optimisation with zero pretraining, leveraging factorised feature grids.
+fixed-size scene representation without pose assumptions, enabling
+pose-free inference that anticipates the DUSt3R line of work.
+
+More recent approaches have augmented generalisable NeRF with generative priors
+to handle the under-constrained regime of very sparse input.
+NerfDiff~\citep{gu2023nerfdiff} incorporates a diffusion model to synthesise
+additional virtual views that supplement the sparse reference set, effectively
+using the diffusion prior as a learned geometric hallucinator.
+ZeroRF~\citep{shi2023zerorf} achieves competitive sparse-view 360$^\circ$
+reconstruction via per-scene optimisation with a factorised feature grid and
+no pretraining, demonstrating that careful regularisation can substitute for
+generalisation in some sparse-input regimes.
 
 \paragraph{Few-shot and test-time methods.}
-FrameNeRF~\citep{yan2024framenerf} presents a simple and efficient framework
-for few-shot NVS by exploiting temporal video frames as dense pseudo views.
-Recollection from Pensieve~\citep{zhou2024pensieve} learns NVS from uncalibrated
-internet videos without posed supervision.
+The sparse-input regime has attracted sustained attention because it is the
+most practically relevant: in deployment, reference images are scarce.
+FrameNeRF~\citep{yan2024framenerf} exploits the temporal redundancy in
+video by treating consecutive frames as dense pseudo-views, dramatically
+increasing effective input density from monocular video without requiring
+multi-camera hardware.
+Recollection from Pensieve~\citep{zhou2024pensieve} takes a step further,
+learning NVS from uncalibrated internet videos without any posed supervision,
+treating pose estimation as an internal latent variable.
 Test-Time Completion~\citep{bao2024tttcompletion} repurposes natural video
-completion as a zero-shot NVS prior at test time.
-Mixed Neural Voxels~\citep{wang2023mixedvoxels} enables fast multi-view video
-synthesis by decomposing scenes into static and dynamic voxel grids.
+completion as a zero-shot NVS prior at test time, demonstrating that large
+video models already encode sufficient spatial knowledge for competitive NVS
+without additional training.
+Mixed Neural Voxels~\citep{wang2023mixedvoxels} accelerates multi-view video
+synthesis by decomposing scenes into static and dynamic voxel grids,
+exploiting the temporal smoothness of most dynamic scenes.
+
+Taken together, generalisable NeRF methods represent a conceptual shift from
+the per-scene paradigm toward the \emph{amortised inference} view of neural
+rendering: a single trained model encodes a universal geometric prior that
+can be applied to any new scene at inference time.
+This shift is a prerequisite for world modeling---a world model that required
+hours of optimisation for each new scene would be useless in real-time decision-making
+settings---and it directly motivates the feed-forward reconstruction models
+discussed in Section~\ref{sec:generalisable}.
 
 \subsection{Dynamic NeRF}
 
-Modelling non-rigid dynamic scenes is a central challenge for world modeling.
+Modelling non-rigid dynamic scenes is a central challenge for world modeling,
+as it requires the representation to capture not just spatial geometry but
+also the temporal evolution of scene structure.
+The fundamental difficulty is that a dynamic scene lacks a fixed canonical
+frame: the geometry changes continuously, and a naive extension of static
+NeRF to incorporate time as an additional input dimension often fails to
+model large deformations faithfully.
 
-D-NeRF~\citep{pumarola2021dnerf} introduces a deformation network mapping each
-spacetime point to a canonical static space.
-Nerfies~\citep{park2021nerfies} and
-HyperNeRF~\citep{park2021hypernerf} model complex non-rigid deformations via
-latent codes and higher-dimensional ambient spaces.
-Neural Scene Flow Fields~(NSFF)~\citep{li2021neural_scene_flow} models dynamic
-scenes with scene flow representation.
+The first generation of dynamic NeRF methods addressed this through the
+\emph{canonical deformation} paradigm.
+D-NeRF~\citep{pumarola2021dnerf} introduces a deformation network that maps
+each spacetime query point $(x,t)$ to a corresponding location in a canonical
+static space, where a standard NeRF computes appearance; at test time, novel
+views at any timestamp are rendered by composing the deformation and canonical
+fields.
+Nerfies~\citep{park2021nerfies} refines this idea for casual monocular video
+of human subjects, where the long-range correlations of body motion make
+pure deformation network predictions unreliable; it instead uses per-frame
+latent deformation codes with regularisation to prevent physically implausible
+deformations.
+HyperNeRF~\citep{park2021hypernerf} generalises further to scenes with
+topological changes---mouth opening, paper tearing---which require changes
+in surface connectivity that smooth deformations cannot represent.
+It embeds the canonical space in a higher-dimensional ambient space, allowing
+the ``slice'' seen at each timestep to represent scenes of changing topology.
+
+Alongside the deformation paradigm, Neural Scene Flow Fields~(NSFF)~\citep{li2021neural_scene_flow}
+proposed an orthogonal approach: explicitly modelling the 3-D velocity field
+of the scene, enabling supervision from monocular depth estimation and optical
+flow and providing an intuitive physical interpretation of motion.
 Non-Rigid NeRF~\citep{tretschk2021nonrigid} reconstructs and synthesises
-novel views of dynamic scenes from monocular video with explicit ray bending.
-DyNeRF~\citep{li2022neural3d} extends NeRF to monocular video via a
-time-conditioned model.
-TiNeuVox~\citep{fang2022tineuvox} uses voxel features to accelerate dynamic NeRF.
-K-Planes~\citep{fridovich2023kplanes} decomposes 4-D space-time into six
-feature planes---three spatial (XY, XZ, YZ) and three spatial-temporal
+novel views of dynamic scenes from monocular video with explicit ray bending,
+demonstrating that accurate reconstruction from a single moving camera is
+achievable even for complex non-rigid motion.
+DyNeRF~\citep{li2022neural3d} extends NeRF to multi-view video by conditioning
+on time, providing a cleaner experimental setting with strong geometric
+grounding from simultaneous cameras.
+
+The second generation of dynamic NeRF methods focused on efficiency, motivated
+by the observation that per-scene dynamic NeRF optimisation is even slower
+than its static counterpart.
+TiNeuVox~\citep{fang2022tineuvox} accelerates dynamic NeRF by replacing the
+deformation-field MLP with a time-conditioned voxel feature grid, reducing
+training time from days to hours.
+The key architectural innovation came with K-Planes~\citep{fridovich2023kplanes}
+and HexPlane~\citep{cao2023hexplane}, which independently proposed the same
+elegant solution: decompose 4-D space-time into six
+feature planes---three spatial~(XY, XZ, YZ) and three spatial-temporal
 (XT, YT, ZT)---each encoded as a learned 2-D grid, making the architecture
 highly memory-efficient and interpretable.
-HexPlane~\citep{cao2023hexplane} independently proposes the same factorisation,
-demonstrating its generality; together these works establish plane-based
-4-D decomposition as the dominant acceleration paradigm for dynamic NeRF.
-NeRFPlayer~\citep{song2023nerfplayer} separately encodes static, deforming and
-newly appearing regions.
-Soup-of-Planes~\citep{du2023soupofplanes} enables fast view synthesis of
-casual monocular videos by fitting a set of planar scenes.
-Pseudo-Generalised Dynamic View~\citep{zhao2024pgdvs} synthesises dynamic views
-from monocular video by combining static and dynamic video inpainting.
-Decoupled Dynamic Video~\citep{wang2024decoupleddynamic} disentangles foreground
-dynamics and background statics for monocular dynamic view synthesis.
+Their simultaneous publication demonstrated the generality of the plane-based
+4-D decomposition idea and established it as the dominant acceleration paradigm
+for dynamic NeRF.
+NeRFPlayer~\citep{song2023nerfplayer} took a complementary approach to efficiency
+by separately encoding static, deforming, and newly-appearing scene regions,
+allowing the model to allocate capacity according to local motion statistics.
 
+More recent work has pushed toward casual, monocular dynamic video synthesis.
+Soup-of-Planes~\citep{du2023soupofplanes} enables fast view synthesis of
+casual monocular videos by fitting a lightweight set of planar scene
+representations; this simple parameterisation is surprisingly effective
+for the forward-facing camera motions common in casual video.
+Pseudo-Generalised Dynamic View~\citep{zhao2024pgdvs} synthesises dynamic
+novel views from monocular video by combining static reconstruction with
+per-frame dynamic inpainting, separating the estimation problem into
+tractable sub-problems.
+Decoupled Dynamic Video~\citep{wang2024decoupleddynamic} disentangles
+foreground dynamics and background statics, assigning different model
+capacities to each and enabling cleaner decomposition of casual monocular videos.
+
+The trajectory of dynamic NeRF research mirrors that of static NeRF: from
+proof-of-concept demonstrations requiring dense camera rigs to fast,
+practical methods operating on casual monocular video.
+This trajectory is directly connected to the world-modeling agenda: a world
+model must reason about dynamic scenes from single-camera observations,
+precisely the regime where the most recent dynamic NeRF methods operate.
 The dynamic NeRF methods are included in the comprehensive
 Table~\ref{tab:nerf_methods} above.
 

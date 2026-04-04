@@ -1,15 +1,49 @@
 \section{Evaluation Metrics and Protocols}
 \label{sec:eval}
 
+Evaluation in \nvs{} and world modeling is more nuanced than in many areas
+of computer vision, because the goals of the field span a spectrum from
+perceptual realism to geometric accuracy to physical plausibility---and
+no single metric captures all three simultaneously.
+A systematic understanding of the strengths and limitations of existing
+metrics is essential for interpreting the benchmark tables in this survey
+and for identifying where reported numbers may be misleading.
+We first discuss the standard image-quality metrics that dominate the per-scene
+NVS literature, then address the video-quality and task-specific metrics
+required for world modeling evaluation, and finally identify the evaluation
+gaps that represent open methodological problems.
+
 \subsection{Standard Image Quality Metrics}
 
-\textbf{PSNR} (peak signal-to-noise ratio): pixel-level fidelity.
-\textbf{SSIM}~\citep{wang2004ssim}: structural similarity.
-\textbf{LPIPS}~\citep{zhang2018lpips}: perceptual similarity via deep features;
-best correlated with human judgement.
+The three metrics that appear in virtually all \nvs{} benchmarks measure
+different aspects of the relationship between a synthesised novel view
+$\hat{\mathbf{I}}$ and a ground-truth photograph $\mathbf{I}^*$.
+
+\textbf{PSNR} (Peak Signal-to-Noise Ratio) measures pixel-level fidelity
+as a logarithmic function of mean squared error: $\text{PSNR}=10\log_{10}(1/\text{MSE})$.
+High PSNR indicates low pixel-level error, but the metric is insensitive to
+structural artifacts and perceptually meaningless differences.
+It is nonetheless a standard baseline because it requires no learned components
+and is fully deterministic.
+
+\textbf{SSIM}~\citep{wang2004ssim} (Structural Similarity Index) computes local
+statistics---mean, variance, and covariance---in sliding windows across the image,
+capturing structural coherence beyond pixel-level fidelity.
+It correlates better with human perceptual quality than PSNR in the classical
+reconstruction regime, but like PSNR it penalises perceptually plausible
+hallucinations that happen to be pixel-misaligned with the ground truth.
+
+\textbf{LPIPS}~\citep{zhang2018lpips} (Learned Perceptual Image Patch Similarity)
+measures perceptual similarity via deep feature distances, computing the $\ell_2$
+distance between activations of a pretrained AlexNet or VGG at multiple layers.
+It is the metric most closely correlated with human perceptual judgements and
+is therefore the most informative single metric for evaluating photorealistic
+NVS quality.
+The limitation of LPIPS is its learned nature: performance on out-of-distribution
+scenes (e.g., medical imagery, infrared) may not reflect perceptual quality.
 
 Table~\ref{tab:nerf_benchmark} shows representative benchmark results on
-NeRF-Synthetic and LLFF.
+NeRF-Synthetic and LLFF across the major method families.
 
 \begin{table*}[t]
   \centering
@@ -60,21 +94,59 @@ NeRF-Synthetic and LLFF.
 
 \subsection{Video and World Modelling Metrics}
 
-\textbf{FVD}~\citep{unterthiner2019fvd} (Fréchet Video Distance): distributional
-quality of generated video sequences.
-\textbf{FID}~\citep{heusel2017fid}: Fréchet Inception Distance for image quality.
-\textbf{Temporal consistency}: average cosine similarity of DINO features
-between consecutive frames.
-\textbf{Task-specific}: for driving, closed-loop collision rate, route completion,
-imitation gap; for robotics, task success rate.
+The transition to world modeling requires metrics that evaluate temporal
+and dynamic properties in addition to per-frame image quality.
+Single-frame quality metrics are insufficient for this purpose because they
+do not measure whether adjacent frames form a geometrically and temporally
+coherent sequence.
+
+\textbf{FVD}~\citep{unterthiner2019fvd} (Fréchet Video Distance) measures
+the distributional distance between generated and real video sequences in
+the feature space of a pretrained I3D network, capturing both spatial quality
+and temporal dynamics.
+It is the video-generation analogue of FID~\citep{heusel2017fid} and has
+become the primary metric for evaluating world model generation quality.
+Its limitation is that it measures distributional quality rather than
+per-instance fidelity---a model that generates diverse but geometrically
+inconsistent sequences can achieve a good FVD score.
+
+\textbf{Temporal consistency} is typically measured as the average cosine
+similarity of DINO~\citep{} features between consecutive frames, penalising
+large changes in feature space that correspond to flickering or frame-level
+inconsistency.
+This metric is sensitive to the temporal coherence that is most directly
+relevant to world modeling but does not capture geometric 3-D consistency
+across viewpoints.
+
+\textbf{Task-specific evaluation} is the most informative metric for world
+models but also the most expensive to compute.
+For autonomous driving world models, the key task-specific metrics are
+closed-loop collision rate, route completion ratio, and imitation gap
+(the difference between the model and an expert policy in a closed-loop setting).
+For robotics, task success rate and generalisation to novel configurations
+are the primary metrics.
+These task-specific metrics provide the most direct evidence that a world
+model is learning semantically useful scene dynamics rather than merely
+reproducing visual appearance statistics.
 
 \subsection{Limitations of Current Evaluation}
 
-PSNR/SSIM penalise perceptually plausible but pixel-misaligned generations,
-especially under large viewpoint changes.
-FVD captures perceptual quality but not geometric accuracy.
-No existing benchmark jointly evaluates geometry, dynamics, action
-responsiveness, and physical plausibility.
+The gap between current evaluation protocols and the requirements of world
+modeling represents a major methodological problem that the field has
+not yet fully addressed.
+
+PSNR and SSIM penalise perceptually plausible but pixel-misaligned generations,
+particularly under large viewpoint changes where the reference content
+provides little direct evidence for the target-view appearance.
+This creates a systematic bias against generative methods, which often hallucinate
+content that is physically plausible but does not match the ground-truth pixel
+values used for evaluation.
+FVD captures temporal dynamics but not geometric accuracy, allowing methods
+that generate temporally smooth but spatially inconsistent videos to achieve
+high scores.
+As a result, no existing benchmark jointly evaluates geometry, dynamics, action
+responsiveness, and physical plausibility---the full set of world-modeling
+desiderata.
 This evaluation gap is itself a major open problem.
 
 \paragraph{Towards systematic evaluation.}
@@ -83,8 +155,15 @@ a principled analysis of how existing benchmarks differ and proposes
 controlled evaluation protocols separating appearance and geometry quality.
 Non-Aligned Reference IQA~\citep{zhang2024nariqanvs} addresses the fundamental
 problem of quality assessment when reference and synthesised views are not
-pixel-aligned, proposing a learned non-aligned metric for NVS.
+pixel-aligned, proposing a learned non-aligned metric for NVS that is
+better suited to the large-viewpoint-change regime where generative methods
+operate.
 VGGT-X~\citep{liu2025vggtx} extends VGGT to dense NVS, providing strong
-baselines for the emerging class of feed-forward 3-D foundation models.
+baselines for the emerging class of feed-forward 3-D foundation models
+and enabling consistent comparison across the generalised reconstruction
+and generative NVS families.
+We propose in \S\ref{sec:open} a five-axis world-modeling benchmark that
+would provide the systematic, multi-dimensional evaluation that the field
+currently lacks.
 
 % ─────────────────────────────────────────────────────────────────────────────

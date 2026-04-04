@@ -1,0 +1,41 @@
+\section{Scene Representation Taxonomy}
+\label{sec:representation}
+
+The choice of scene representation determines the fundamental trade-offs a
+method faces: rendering speed, reconstruction accuracy, memory footprint,
+generalisability, and editability.
+We identify four families, each reflecting a different position on the
+speed--compactness--quality Pareto frontier.
+
+\textbf{Implicit representations} (MLPs, hash grids) encode the scene as a
+continuous function $f_\theta(\mathbf{x})$.
+Their key advantages are compactness and continuous differentiability, which
+support high-quality reconstruction from dense observations.
+Their central limitation is rendering speed: each pixel requires integrating
+along a ray through many network evaluations.
+NeRF~\citep{mildenhall2020nerf} and its successors (§\ref{sec:nerf}) are the
+canonical family.
+
+\textbf{Explicit representations} (voxels, point clouds, Gaussians) store scene
+attributes at discrete spatial elements, enabling tile-based or splat-based
+rasterisation that achieves real-time frame rates.
+The trade-off is memory: a faithful 3DGS scene may occupy hundreds of megabytes.
+3D Gaussian Splatting~\citep{kerbl2023gaussian} (§\ref{sec:3dgs}) is the
+dominant current representative.
+
+\textbf{Hybrid representations} combine an explicit spatial structure---typically
+a triplane~\citep{chan2022efficient} or multi-resolution
+grid~\citep{muller2022instant}---with a shallow MLP decoder.
+They strike a practical balance between the quality of implicit models and
+the speed of explicit ones, and are the backbone of most large reconstruction
+models (§\ref{sec:generalisable}).
+
+\textbf{Compositional representations} decompose the scene into semantic
+entities (objects, backgrounds, agents) with independent sub-representations.
+This structural inductive bias enables object-level editing and compositional
+generation~\citep{niemeyer2021giraffe,zhou2024gala3d}, but typically requires
+supervision or segmentation to separate entities.
+It is also the natural representation for world models that must reason about
+independently acting objects.
+
+% ─────────────────────────────────────────────────────────────────────────────
